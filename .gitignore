@@ -1,0 +1,7 @@
+/bin
+/[Bb]uild
+/[Bb]uild-*
+*.obj
+*.lib
+*.pdb
+*.exp
