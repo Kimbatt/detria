@@ -1,0 +1,2 @@
+# detria
+Delaunay triangulation library
