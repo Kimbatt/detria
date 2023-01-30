@@ -83,7 +83,6 @@ All floating point calculations are handled by either:
 
 ## Future improvements
 These might be added in the future:
-- Retrieve convex hull of triangulation
 - Support for integer point coordinates
 - Option to disable robust predicates
 - Option to disable bounds checks, NaN checks, assertions, etc.

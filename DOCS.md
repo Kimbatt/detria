@@ -145,6 +145,37 @@ if (tri.triangulate(true))
 }
 ```
 
+# Other results of the triangulation
+## Convex hull
+After triangulation, you can get the convex hull of the entire triangulation, using the `forEachConvexHullVertex` function:
+```cpp
+tri.forEachConvexHullVertex([](Idx vertexIndex)
+{
+    std::cout << vertexIndex << std::endl;
+});
+```
+
+The vertices are in clockwise order.
+
+## Polyline hierarchy
+You can query the parent of each polyline (that is, which polyline contains the current polyline directly).  
+`addOutline`, `addHole`, and `addPolylineAutoDetectType` return the polyline's index, which can be used to get its parent, using `getParentPolylineIndex`:
+```cpp
+detria::Triangulation tri;
+tri.setPoints(...);
+Idx outlineIndex = tri.addOutline(...);
+if (tri.triangulate(true))
+{
+    // if the polyline is top-level (has no parent), then nullopt is returned
+    // otherwise, the parent index of the polyline is returned
+    std::optional<Idx> parentIndex = tri.getParentPolylineIndex(outlineIndex);
+    // `parentIndex` should be nullopt here, since it's the only polyline 
+}
+```
+
+In the example image above (in the "Terminology" section, the letter R), let's say that the outline (green) is index 0, and the hole (red) is index 1.  
+In this case, `tri.getParentPolylineIndex(0)` returns nullopt, `tri.getParentPolylineIndex(1)` returns 0.
+
 # Template parameters
 The `detria::Triangulation` class has multiple template parameters:
 ```cpp

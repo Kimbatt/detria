@@ -551,6 +551,51 @@ bool FractalTest()
         tri.addPolylineAutoDetectType(polyline.pointIndices);
     }
 
+    auto testConvexHullAndPolylineParent = [&]()
+    {
+        // polyline 0 should be top-level, so no parent
+        std::optional parentIdx = tri.getParentPolylineIndex(0);
+        if (parentIdx.has_value())
+        {
+            return false;
+        }
+
+        std::vector<Idx> convexHullVertices;
+        tri.forEachConvexHullVertex([&](Idx idx)
+        {
+            convexHullVertices.push_back(idx);
+        });
+
+        if (convexHullVertices.size() != 4)
+        {
+            return false;
+        }
+
+        // the convex hull should be "0 3 2 1" (or anything which has the same order, e.g. "2 1 0 3" etc.)
+        size_t zeroIndex{ };
+        for (size_t i = 0; i < convexHullVertices.size(); ++i)
+        {
+            if (convexHullVertices[i] == 0)
+            {
+                zeroIndex = i;
+                break;
+            }
+        }
+
+        bool ok =
+            convexHullVertices[zeroIndex] == 0 &&
+            convexHullVertices[(zeroIndex + 1) % 4] == 3 &&
+            convexHullVertices[(zeroIndex + 2) % 4] == 2 &&
+            convexHullVertices[(zeroIndex + 3) % 4] == 1;
+
+        if (!ok)
+        {
+            return false;
+        }
+
+        return true;
+    };
+
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     bool success = tri.triangulate(false);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -563,6 +608,11 @@ bool FractalTest()
         return false;
     }
 
+    if (!testConvexHullAndPolylineParent())
+    {
+        return false;
+    }
+
     start = std::chrono::steady_clock::now();
     success = tri.triangulate(true);
     end = std::chrono::steady_clock::now();
@@ -572,6 +622,11 @@ bool FractalTest()
     if (!success)
     {
         std::cerr << tri.getErrorMessage() << std::endl;
+        return false;
+    }
+
+    if (!testConvexHullAndPolylineParent())
+    {
         return false;
     }
 
