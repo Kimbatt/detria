@@ -176,28 +176,68 @@ if (tri.triangulate(true))
 In the example image above (in the "Terminology" section, the letter R), let's say that the outline (green) is index 0, and the hole (red) is index 1.  
 In this case, `tri.getParentPolylineIndex(0)` returns nullopt, `tri.getParentPolylineIndex(1)` returns 0.
 
-# Template parameters
+# Template parameters and configuration
 The `detria::Triangulation` class has multiple template parameters:
 ```cpp
 template <
     typename Point = PointD,
     typename Idx = uint32_t,
-    typename PointAdapter = DefaultPointAdapter<Point>,
-    template <typename T, typename Allocator> typename Collection = std::vector,
-    typename Allocator = memory::DefaultAllocator
+    typename Config = DefaultTriangulationConfig<Point>
 >
 class Triangulation
 {
     // ...
 };
+
+template <typename Point>
+struct DefaultTriangulationConfig
+{
+    using PointAdapter = DefaultPointAdapter<Point>;
+
+    using Allocator = memory::DefaultAllocator;
+
+    template <typename T, typename Allocator>
+    using Collection = std::vector<T, Allocator>;
+
+    constexpr static bool UseRobustOrientationTests = true;
+    constexpr static bool UseRobustIncircleTests = true;
+};
 ```
+
+Template parameters:
 - `Point` - The point type used in the triangulation, more details about this in the next section.
 - `Idx` - The index type, which will be used when referring to vertex indices. You can use types like `size_t` instead of `uint32_t` if you have the indices in that format.  
 Note that the number of points should be less than the max value of the type divided by 8, so e.g. 2^29 for 32-bit numbers, or 8192 for 19-bit. This is because internally, the same index type is used to store vertex-triangle relations, which can be 4\*triangle count, and triangle count is arount 2\*vertex count.
+
+Configuration:  
+The configuration allows you to customize even more parameters of the triangulation.
 - `PointAdapter` - Used to convert between point types, also more details about this in the next section.
 - `Collection` - You can use a custom collection instead of `std::vector`, if you need to.  
 The collection must have the basic functions of a collection, e.g. `size()`, `resize()`, indexing operator, etc.
 - `Allocator` - You can use a custom allocator instead of the default allocator (which uses the global `new` operator). More details about this in the "Custom allocators" section.
+- `UseRobustOrientationTests` - You can disable robust orientation tests if you don't need them, but this can cause triangulations to produce incorrect results (because of floating point inaccuracy).
+- `UseRobustIncircleTests` - Same as above, but for incircle tests (these are only used in delaunay triangulations).
+
+The `Point` and `Idx` types are not part of the configuration, because these types are the most likely to be changed, and it would require a configuration class to be defined for each combination.
+
+To create a custom configuration, inherit from `DefaultTriangulationConfig`, and override the values/types you want to change. For example:
+```cpp
+struct MyTriangulationConfig : public DefaultTriangulationConfig<detria::PointD>
+{
+    using Allocator = MyCustomAllocatorType;
+
+    // the rest are used from the default configuration
+}
+
+void doStuff()
+{
+    detria::Triangulation<detria::PointD, uint32_t, MyTriangulationConfig> tri(getMyCustomAllocator());
+    ...
+}
+```
+
+This allows you to only override what you want, and keep the rest of the configuration the same.  
+Alternatively, you can just create a new class, but then you'd need to set every parameter manually (instead of only overriding the ones you want to change).
 
 # Custom point types
 You can use any point type:

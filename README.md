@@ -45,7 +45,7 @@ std::vector<detria::PointD> points =
 };
 
 // list of point indices
-std::vector<size_t> outline = { 0, 1, 2, 3 };
+std::vector<uint32_t> outline = { 0, 1, 2, 3 };
 
 bool delaunay = true;
 
@@ -59,7 +59,7 @@ if (success)
 {
     bool cwTriangles = true;
 
-    tri.forEachTriangle([&](detria::Triangle<size_t> triangle)
+    tri.forEachTriangle([&](detria::Triangle<uint32_t> triangle)
     {
         // `triangle` contains the point indices
 
@@ -84,7 +84,6 @@ All floating point calculations are handled by either:
 ## Future improvements
 These might be added in the future:
 - Support for integer point coordinates
-- Option to disable robust predicates
 - Option to disable bounds checks, NaN checks, assertions, etc.
 - User-defined edge flip conditions (e.g. flip based on edge lengths, triangle aspect ratios, etc.)
 - Support for older C++ versions (C++11 maybe, probably not C++98 though)

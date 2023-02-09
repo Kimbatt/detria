@@ -15,7 +15,7 @@ std::vector<detria::PointD> points =
 };
 
 // list of point indices
-std::vector<size_t> outline = { 0, 1, 2, 3 };
+std::vector<uint32_t> outline = { 0, 1, 2, 3 };
 
 bool delaunay = true;
 
@@ -29,7 +29,7 @@ if (success)
 {
     bool cwTriangles = true;
 
-    tri.forEachTriangle([&](detria::Triangle<size_t> triangle)
+    tri.forEachTriangle([&](detria::Triangle<uint32_t> triangle)
     {
         // `triangle` contains the point indices
 
@@ -495,7 +495,7 @@ namespace detria
             return(D[Dlength - 1]);
         }
 
-        template <typename Scalar>
+        template <bool Robust, typename Scalar>
         inline Scalar orient2d(Scalar pa[2], Scalar pb[2], Scalar pc[2])
         {
             Scalar detsum = Scalar(0);
@@ -504,40 +504,47 @@ namespace detria
             Scalar detright = (pa[1] - pc[1]) * (pb[0] - pc[0]);
             Scalar det = detleft - detright;
 
-            if (detleft > Scalar(0))
+            if constexpr (Robust)
             {
-                if (detright <= Scalar(0))
+                if (detleft > Scalar(0))
                 {
-                    return det;
+                    if (detright <= Scalar(0))
+                    {
+                        return det;
+                    }
+                    else
+                    {
+                        detsum = detleft + detright;
+                    }
+                }
+                else if (detleft < Scalar(0))
+                {
+                    if (detright >= Scalar(0))
+                    {
+                        return det;
+                    }
+                    else
+                    {
+                        detsum = -detleft - detright;
+                    }
                 }
                 else
                 {
-                    detsum = detleft + detright;
+                    return det;
                 }
-            }
-            else if (detleft < Scalar(0))
-            {
-                if (detright >= Scalar(0))
+
+                Scalar errbound = errorBounds<Scalar>.ccwerrboundA * detsum;
+                if (Absolute(det) >= errbound) DETRIA_LIKELY
                 {
                     return det;
                 }
-                else
-                {
-                    detsum = -detleft - detright;
-                }
+
+                return orient2dadapt(pa, pb, pc, detsum);
             }
             else
             {
                 return det;
             }
-
-            Scalar errbound = errorBounds<Scalar>.ccwerrboundA * detsum;
-            if (Absolute(det) >= errbound) DETRIA_LIKELY
-            {
-                return det;
-            }
-
-            return orient2dadapt(pa, pb, pc, detsum);
         }
 
         template <typename Scalar>
@@ -1197,14 +1204,14 @@ namespace detria
             CW = 0, CCW = 1, Collinear = 2
         };
 
-        template <typename Vec2>
+        template <bool Robust, typename Vec2>
         inline Orientation orient2d(const Vec2& a, const Vec2& b, const Vec2& c)
         {
             using Scalar = decltype(Vec2::x);
             Scalar pa[2]{ a.x, a.y };
             Scalar pb[2]{ b.x, b.y };
             Scalar pc[2]{ c.x, c.y };
-            Scalar result = predicates::orient2d(pa, pb, pc);
+            Scalar result = predicates::orient2d<Robust, Scalar>(pa, pb, pc);
             if (result < Scalar(0))
             {
                 return Orientation::CW;
@@ -1229,7 +1236,7 @@ namespace detria
         {
 #ifndef NDEBUG
             // The points pa, pb, and pc must be in counterclockwise order, or the sign of the result will be reversed.
-            detail::detriaAssert(math::orient2d(a, b, c) == math::Orientation::CCW);
+            detail::detriaAssert(math::orient2d<Robust, Vec2>(a, b, c) == math::Orientation::CCW);
 #endif
 
             using Scalar = decltype(Vec2::x);
@@ -1237,7 +1244,7 @@ namespace detria
             Scalar pb[2]{ b.x, b.y };
             Scalar pc[2]{ c.x, c.y };
             Scalar pd[2]{ d.x, d.y };
-            Scalar result = predicates::incircle<Robust>(pa, pb, pc, pd);
+            Scalar result = predicates::incircle<Robust, Scalar>(pa, pb, pc, pd);
             if (result > Scalar(0))
             {
                 return CircleLocation::Inside;
@@ -2559,16 +2566,55 @@ namespace detria
 
 #define DETRIA_CHECK(cond) do { if (!(cond)) DETRIA_UNLIKELY { return false; } } while (0)
 
+    template <typename Point>
+    struct DefaultTriangulationConfig
+    {
+        // Default configuration for a triangulation.
+        // To change the values below, you can inherit from this class, and override the things you want to change.
+        // For example:
+        /*
+
+        struct MyTriangulationConfig : public DefaultTriangulationConfig<detria::PointD>
+        {
+            using Allocator = MyCustomAllocatorType;
+
+            // the rest are used from the default configuration
+        }
+
+        void doStuff()
+        {
+            detria::Triangulation<detria::PointD, uint32_t, MyTriangulationConfig> tri(getMyCustomAllocator());
+            ...
+        }
+
+        */
+
+        using PointAdapter = DefaultPointAdapter<Point>;
+
+        using Allocator = memory::DefaultAllocator;
+
+        template <typename T, typename Allocator>
+        using Collection = std::vector<T, Allocator>;
+
+        constexpr static bool UseRobustOrientationTests = true;
+        constexpr static bool UseRobustIncircleTests = true;
+    };
+
     template <
         typename Point = PointD,
         typename Idx = uint32_t,
-        typename PointAdapter = DefaultPointAdapter<Point>,
-        template <typename T, typename Allocator> typename Collection = std::vector,
-        typename Allocator = memory::DefaultAllocator
+        typename Config = DefaultTriangulationConfig<Point>
     >
     class Triangulation
     {
     private:
+        using PointAdapter = typename Config::PointAdapter;
+
+        using Allocator = typename Config::Allocator;
+
+        template <typename T, typename Allocator>
+        using Collection = typename Config::template Collection<T, Allocator>;
+
         using Vector2 = std::invoke_result_t<decltype(PointAdapter::adapt), const Point&>; // can be const reference
 
         using Scalar = decltype(std::decay_t<Vector2>::x);
@@ -3319,7 +3365,7 @@ namespace detria
                 const Idx& currentIdx = sortedPoints[i];
                 Vector2 currentPosition = adapt(_points[size_t(currentIdx)]);
 
-                triangleOrientation = math::orient2d(p0Position, p1Position, currentPosition);
+                triangleOrientation = orient2d(p0Position, p1Position, currentPosition);
                 if (triangleOrientation != math::Orientation::Collinear)
                 {
                     firstNonCollinearIndex = i;
@@ -3386,7 +3432,7 @@ namespace detria
                     const ListNode& node = _convexHullPoints.getNode(nodeId);
                     const ListNode& next = _convexHullPoints.getNode(node.nextId);
 
-                    math::Orientation orientation = math::orient2d(
+                    math::Orientation orientation = orient2d(
                         adapt(_points[size_t(node.data)]),
                         adapt(_points[size_t(next.data)]),
                         position
@@ -3616,7 +3662,7 @@ namespace detria
                 // https://people.eecs.berkeley.edu/~jrs/papers/elemj.pdf
                 // but we'd need to make sure that every edge is only processed once
 
-                math::CircleLocation loc = math::incircle<true>(vertex0Position, vertex1Position, otherVertex1Position, otherVertex0Position);
+                math::CircleLocation loc = incircle(vertex0Position, vertex1Position, otherVertex1Position, otherVertex0Position);
                 if (loc == math::CircleLocation::Inside)
                 {
                     // flip edge
@@ -3929,8 +3975,8 @@ namespace detria
                 Vector2 prevVertexPosition = adapt(_points[size_t(prevVertex.index)]);
                 Vector2 nextVertexPosition = adapt(_points[size_t(nextVertex.index)]);
 
-                math::Orientation orientNext = math::orient2d(p0Position, p1Position, nextVertexPosition);
-                math::Orientation orientPrev = math::orient2d(p0Position, p1Position, prevVertexPosition);
+                math::Orientation orientNext = orient2d(p0Position, p1Position, nextVertexPosition);
+                math::Orientation orientPrev = orient2d(p0Position, p1Position, prevVertexPosition);
 
                 if (orientPrev == math::Orientation::Collinear || orientNext == math::Orientation::Collinear) DETRIA_UNLIKELY
                 {
@@ -4070,7 +4116,7 @@ namespace detria
                     break;
                 }
 
-                math::Orientation orientation = math::orient2d(adapt(p0), adapt(p1), adapt(_points[size_t(thirdVertex.index)]));
+                math::Orientation orientation = orient2d(adapt(p0), adapt(p1), adapt(_points[size_t(thirdVertex.index)]));
                 if (orientation == math::Orientation::Collinear) DETRIA_UNLIKELY
                 {
                     // point on a constrained edge, this is not allowed
@@ -4147,7 +4193,7 @@ namespace detria
                     TVertex prevPrevVertex = _constrainedEdgeReTriangulationStack[_constrainedEdgeReTriangulationStack.size() - 2];
                     TVertex prevVertex = _constrainedEdgeReTriangulationStack[_constrainedEdgeReTriangulationStack.size() - 1];
 
-                    math::Orientation orientation = math::orient2d(
+                    math::Orientation orientation = orient2d(
                         adapt(_points[size_t(prevPrevVertex.index)]),
                         adapt(_points[size_t(prevVertex.index)]),
                         adapt(_points[size_t(currentVertex.index)])
@@ -4465,6 +4511,16 @@ namespace detria
                     }
                 }
             });
+        }
+
+        inline static math::Orientation orient2d(Vector2 a, Vector2 b, Vector2 c)
+        {
+            return math::orient2d<Config::UseRobustOrientationTests>(a, b, c);
+        }
+
+        inline static math::CircleLocation incircle(Vector2 a, Vector2 b, Vector2 c, Vector2 d)
+        {
+            return math::incircle<Config::UseRobustIncircleTests>(a, b, c, d);
         }
 
     private:
