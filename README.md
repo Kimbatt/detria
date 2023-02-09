@@ -11,7 +11,7 @@
 - Single file library
 
 ## Examples
-Delaunay triangulation of point set:  
+Delaunay triangulation of a point set:  
 ![](images/delaunay.png)
 Constrained delaunay triangulation:  
 ![](images/constrained%20delaunay.png)
@@ -29,7 +29,7 @@ Requires C++17 or later.
 No external dependencies are used, only the C++ standard library.
 
 ## Usage
-Just include `detria.hpp` in your project.  
+Just include [`detria.hpp`](include/detria.hpp) in your project.  
 Basic code example:
 
 ```cpp
