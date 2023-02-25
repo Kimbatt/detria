@@ -78,13 +78,12 @@ Placed in the public domain by Jonathan Richard Shewchuk.
 
 All floating point calculations are handled by either:
 - Direct floating point comparisons (e.g. `a < b`, `a == b`), which are always exact
-- Calls to `orient2d` from the Robust Predicates library, which exactly decides decides the orientation of three points (clockwise, counter-clockwise, or collinear)
+- Calls to `orient2d` from the Robust Predicates library, which exactly decides the orientation of three points (clockwise, counter-clockwise, or collinear)
 - In delaunay triangulations, the `incircle` function is used to decide if a circle (described by three points) contains a fourth point, or doesn't (or if all four points are cocircular)
 
 ## Future improvements
 These might be added in the future:
 - Support for integer point coordinates
-- Option to disable bounds checks, NaN checks, assertions, etc.
 - User-defined edge flip conditions (e.g. flip based on edge lengths, triangle aspect ratios, etc.)
 - Support for older C++ versions (C++11 maybe, probably not C++98 though)
 - Performance improvements

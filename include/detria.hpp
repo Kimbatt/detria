@@ -2598,6 +2598,15 @@ namespace detria
 
         constexpr static bool UseRobustOrientationTests = true;
         constexpr static bool UseRobustIncircleTests = true;
+
+        // If enabled, then all user-provided indices are checked, and if anything is invalid (out-of-bounds or negative indices,
+        // or two consecutive duplicate indices), then an error is generated.
+        // If disabled, then no checks are done, so if the input has any invalid indices, then it's undefined behavior (might crash).
+        constexpr static bool IndexChecks = true;
+
+        // If enabled, then all the input points are checked, and if any of the points have a NaN or infinity value, then an error is generated.
+        // If there are no such values in the list of input points, then this can be disabled.
+        constexpr static bool NaNChecks = true;
     };
 
     template <
@@ -2614,6 +2623,9 @@ namespace detria
 
         template <typename T, typename Allocator>
         using Collection = typename Config::template Collection<T, Allocator>;
+
+        template <typename T>
+        using CollectionWithAllocator = Collection<T, typename Allocator::template StlAllocator<T>>;
 
         using Vector2 = std::invoke_result_t<decltype(PointAdapter::adapt), const Point&>; // can be const reference
 
@@ -2722,7 +2734,7 @@ namespace detria
         using TEdge = typename TMesh::Edge;
         using TTriangle = typename TMesh::Triangle;
 
-        using TVertexCollection = Collection<TVertex, typename Allocator::template StlAllocator<TVertex>>;
+        using TVertexCollection = CollectionWithAllocator<TVertex>;
         using VERelation = typename TMesh::VertexToEdgeRelation;
         using ETRelation = typename TMesh::EdgeToTriangleRelation;
         using VTRelation = typename TMesh::VertexToTriangleRelation;
@@ -2998,9 +3010,12 @@ namespace detria
             _manuallyConstrainedEdges(allocator.template createStlAllocator<Vec2<Idx>>()),
             _autoDetectedPolylineTypes(allocator.template createStlAllocator<EdgeType>()),
             _topologyMesh(allocator),
+            _initialTriangulation_SortedPoints(allocator.template createStlAllocator<Idx>()),
             _constrainedEdgeVerticesCW(allocator.template createStlAllocator<TVertex>()),
             _constrainedEdgeVerticesCCW(allocator.template createStlAllocator<TVertex>()),
             _constrainedEdgeReTriangulationStack(allocator.template createStlAllocator<TVertex>()),
+            _classifyTriangles_CheckedTriangles(allocator.template createStlAllocator<bool>()),
+            _classifyTriangles_TrianglesToCheck(allocator.template createStlAllocator<TTriangle>()),
             _convexHullPoints(allocator),
             _parentPolylines(allocator.template createStlAllocator<std::optional<Idx>>()),
             _delaunayCheckStack(allocator.template createStlAllocator<Edge_>())
@@ -3221,9 +3236,12 @@ namespace detria
         void clearInternalData()
         {
             _topologyMesh.clear();
+            _initialTriangulation_SortedPoints.clear();
             _constrainedEdgeVerticesCW.clear();
             _constrainedEdgeVerticesCCW.clear();
             _constrainedEdgeReTriangulationStack.clear();
+            _classifyTriangles_CheckedTriangles.clear();
+            _classifyTriangles_TrianglesToCheck.clear();
             _delaunayCheckStack.clear();
             _convexHullPoints.clear();
             _parentPolylines.clear();
@@ -3243,17 +3261,20 @@ namespace detria
                 return fail(TE_LessThanThreePoints{ });
             }
 
-            // check NaN / inf values
-            for (size_t i = 0; i < _points.size(); ++i)
+            if constexpr (Config::NaNChecks)
             {
-                Vector2 p = adapt(_points[i]);
-                if (!std::isfinite(p.x) || !std::isfinite(p.y)) DETRIA_UNLIKELY
+                // check NaN / inf values
+                for (size_t i = 0; i < _points.size(); ++i)
                 {
-                    return fail(TE_NonFinitePositionFound
+                    Vector2 p = adapt(_points[i]);
+                    if (!std::isfinite(p.x) || !std::isfinite(p.y)) DETRIA_UNLIKELY
                     {
-                        .index = Idx(i),
-                        .value = std::isfinite(p.x) ? p.y : p.x
-                    });
+                        return fail(TE_NonFinitePositionFound
+                        {
+                            .index = Idx(i),
+                            .value = std::isfinite(p.x) ? p.y : p.x
+                        });
+                    }
                 }
             }
 
@@ -3285,8 +3306,7 @@ namespace detria
         bool createInitialTriangulation(bool delaunay, TVertex& convexHullVertex0, TVertex& convexHullVertex1)
         {
             // initialize point data
-            Collection<Idx, typename Allocator::template StlAllocator<Idx>> sortedPoints(
-                _allocator.template createStlAllocator<Idx>());
+            CollectionWithAllocator<Idx>& sortedPoints = _initialTriangulation_SortedPoints;
             sortedPoints.resize(_points.size());
             for (size_t i = 0; i < _points.size(); ++i)
             {
@@ -3783,21 +3803,24 @@ namespace detria
 
         bool constrainSingleEdge(const Idx& idxA, const Idx& idxB, const EdgeType& constrainedEdgeType, const Idx& polylineIndex, bool delaunay)
         {
-            if (idxA < Idx(0) || idxA >= Idx(_points.size()) || idxB < Idx(0) || idxB >= Idx(_points.size())) DETRIA_UNLIKELY
+            if constexpr (Config::IndexChecks)
             {
-                return fail(TE_PolylineIndexOutOfBounds
+                if (idxA < Idx(0) || idxA >= Idx(_points.size()) || idxB < Idx(0) || idxB >= Idx(_points.size())) DETRIA_UNLIKELY
                 {
-                    .pointIndex = (idxA < Idx(0) || idxA >= Idx(_points.size())) ? idxA : idxB,
-                    .numPointsInPolyline = Idx(_points.size())
-                });
-            }
+                    return fail(TE_PolylineIndexOutOfBounds
+                    {
+                        .pointIndex = (idxA < Idx(0) || idxA >= Idx(_points.size())) ? idxA : idxB,
+                        .numPointsInPolyline = Idx(_points.size())
+                    });
+                }
 
-            if (idxA == idxB) DETRIA_UNLIKELY
-            {
-                return fail(TE_PolylineDuplicateConsecutivePoints
+                if (idxA == idxB) DETRIA_UNLIKELY
                 {
-                    .pointIndex = idxA
-                });
+                    return fail(TE_PolylineDuplicateConsecutivePoints
+                    {
+                        .pointIndex = idxA
+                    });
+                }
             }
 
             TVertex v0(idxA);
@@ -4065,8 +4088,7 @@ namespace detria
 
         bool removeInnerTrianglesAndGetOuterVertices(const TVertex& v0, const TVertex& v1, const Point& p0, const Point& p1,
             TVertex vertexCW, TVertex vertexCCW, const TTriangle& initialTriangle,
-            Collection<TVertex, typename Allocator::template StlAllocator<TVertex>>& verticesCW,
-            Collection<TVertex, typename Allocator::template StlAllocator<TVertex>>& verticesCCW)
+            CollectionWithAllocator<TVertex>& verticesCW, CollectionWithAllocator<TVertex>& verticesCCW)
         {
             verticesCW.push_back(v0);
             verticesCW.push_back(vertexCW);
@@ -4152,7 +4174,7 @@ namespace detria
         }
 
         template <bool IsCW>
-        bool reTriangulateAroundConstrainedEdge(const Collection<TVertex, typename Allocator::template StlAllocator<TVertex>>& vertices, bool delaunay)
+        bool reTriangulateAroundConstrainedEdge(const CollectionWithAllocator<TVertex>& vertices, bool delaunay)
         {
             /*
             `requiredOrientation` depends on which side of the line we are on
@@ -4273,12 +4295,11 @@ namespace detria
 
             _autoDetectedPolylineTypes.resize(_polylines.size(), EdgeType::AutoDetect);
 
-            Collection<bool, typename Allocator::template StlAllocator<bool>> checkedTriangles(
-                size_t(_topologyMesh.getTriangleUsedCount()), _allocator.template createStlAllocator<bool>());
+            CollectionWithAllocator<bool>& checkedTriangles = _classifyTriangles_CheckedTriangles;
+            checkedTriangles.resize(size_t(_topologyMesh.getTriangleUsedCount()));
             checkedTriangles[size_t(startingTriangle.index)] = true;
 
-            Collection<TTriangle, typename Allocator::template StlAllocator<TTriangle>> trianglesToCheck(
-                _allocator.template createStlAllocator<TTriangle>());
+            CollectionWithAllocator<TTriangle>& trianglesToCheck = _classifyTriangles_TrianglesToCheck;
             trianglesToCheck.push_back(startingTriangle);
 
             if (startingEdgeType == EdgeType::AutoDetect)
@@ -4528,20 +4549,23 @@ namespace detria
 
         // inputs
         detail::ReadonlySpan<Point> _points;
-        Collection<PolylineData, typename Allocator::template StlAllocator<PolylineData>> _polylines;
-        Collection<Vec2<Idx>, typename Allocator::template StlAllocator<Vec2<Idx>>> _manuallyConstrainedEdges;
-        Collection<EdgeType, typename Allocator::template StlAllocator<EdgeType>> _autoDetectedPolylineTypes;
+        CollectionWithAllocator<PolylineData> _polylines;
+        CollectionWithAllocator<Vec2<Idx>> _manuallyConstrainedEdges;
+        CollectionWithAllocator<EdgeType> _autoDetectedPolylineTypes;
 
         TMesh _topologyMesh;
 
         // reused containers for multiple calculations
-        Collection<TVertex, typename Allocator::template StlAllocator<TVertex>> _constrainedEdgeVerticesCW;
-        Collection<TVertex, typename Allocator::template StlAllocator<TVertex>> _constrainedEdgeVerticesCCW;
-        Collection<TVertex, typename Allocator::template StlAllocator<TVertex>> _constrainedEdgeReTriangulationStack;
+        CollectionWithAllocator<Idx> _initialTriangulation_SortedPoints;
+        CollectionWithAllocator<TVertex> _constrainedEdgeVerticesCW;
+        CollectionWithAllocator<TVertex> _constrainedEdgeVerticesCCW;
+        CollectionWithAllocator<TVertex> _constrainedEdgeReTriangulationStack;
+        CollectionWithAllocator<bool> _classifyTriangles_CheckedTriangles;
+        CollectionWithAllocator<TTriangle> _classifyTriangles_TrianglesToCheck;
 
         // results which are not related to the triangulation directly
         List _convexHullPoints;
-        Collection<std::optional<Idx>, typename Allocator::template StlAllocator<std::optional<Idx>>> _parentPolylines;
+        CollectionWithAllocator<std::optional<Idx>> _parentPolylines;
 
         struct TopologyEdgeWithVertices
         {
@@ -4550,7 +4574,7 @@ namespace detria
             TEdge edge;
         };
 
-        Collection<TopologyEdgeWithVertices, typename Allocator::template StlAllocator<TopologyEdgeWithVertices>> _delaunayCheckStack;
+        CollectionWithAllocator<TopologyEdgeWithVertices> _delaunayCheckStack;
 
         TriangulationErrorData _error = TE_NotStarted{ };
     };

@@ -199,8 +199,7 @@ struct DefaultTriangulationConfig
     template <typename T, typename Allocator>
     using Collection = std::vector<T, Allocator>;
 
-    constexpr static bool UseRobustOrientationTests = true;
-    constexpr static bool UseRobustIncircleTests = true;
+    // etc...
 };
 ```
 
@@ -217,6 +216,10 @@ The collection must have the basic functions of a collection, e.g. `size()`, `re
 - `Allocator` - You can use a custom allocator instead of the default allocator (which uses the global `new` operator). More details about this in the "Custom allocators" section.
 - `UseRobustOrientationTests` - You can disable robust orientation tests if you don't need them, but this can cause triangulations to produce incorrect results (because of floating point inaccuracy).
 - `UseRobustIncircleTests` - Same as above, but for incircle tests (these are only used in delaunay triangulations).
+- `IndexChecks` - If enabled, then all user-provided indices are checked, and if anything is invalid (out-of-bounds or negative indices, or two consecutive duplicate indices), then an error is generated.  
+If disabled, then no checks are done, so if the input has any invalid indices, then it's undefined behavior (might crash).
+- `NaNChecks` - If enabled, then all the input points are checked, and if any of the points have a NaN or infinity value, then an error is generated.  
+If there are no such values in the list of input points, then this can be disabled.
 
 The `Point` and `Idx` types are not part of the configuration, because these types are the most likely to be changed, and it would require a configuration class to be defined for each combination.
 
