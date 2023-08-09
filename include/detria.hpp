@@ -3575,7 +3575,7 @@ namespace detria
             // store an edge of the outline for later
             // also, don't store the edge, because it's possible that an edge is deleted and recreated with a different id later
             // storing two vertices guarantees that the edge will be valid later too
-            const ListNode& firstConvexHullNode = _convexHullPoints.getNode(0);
+            const ListNode& firstConvexHullNode = _convexHullPoints.getNode(lastPointId);
             const ListNode& secondConvexHullNode = _convexHullPoints.getNode(firstConvexHullNode.nextId);
             convexHullVertex0 = TVertex(firstConvexHullNode.data);
             convexHullVertex1 = TVertex(secondConvexHullNode.data);
