@@ -3139,8 +3139,9 @@ namespace detria
 
             if (!triangulateInternal(delaunay))
             {
-                // if failed, then clear topology mesh, so no invalid triangulation is returned
+                // if failed, then clear topology mesh and convex hull points, so no invalid triangulation is returned
                 _topologyMesh.clear();
+                _convexHullPoints.clear();
                 return false;
             }
 
@@ -3200,18 +3201,18 @@ namespace detria
         // the vertices are in clockwise order
         void forEachConvexHullVertex(auto&& callback)
         {
-            if (_convexHullPoints.size() == 0)
+            if (_convexHullPoints.size() == 0 || _convexHullStartIndex == Idx(-1))
             {
                 return;
             }
 
-            Idx nodeId = 0;
+            Idx nodeId = _convexHullStartIndex;
             do
             {
                 const typename List::Node& currentNode = _convexHullPoints.getNode(nodeId);
                 callback(currentNode.data);
                 nodeId = currentNode.nextId;
-            } while (nodeId != 0);
+            } while (nodeId != _convexHullStartIndex);
         }
 
         // returns the index of the parent of this polyline (the parent directly contains this polyline)
@@ -3244,6 +3245,7 @@ namespace detria
             _classifyTriangles_TrianglesToCheck.clear();
             _delaunayCheckStack.clear();
             _convexHullPoints.clear();
+            _convexHullStartIndex = Idx(-1);
             _parentPolylines.clear();
             _autoDetectedPolylineTypes.clear();
         }
@@ -3357,15 +3359,14 @@ namespace detria
             if (hasDuplicatePoints)
             {
                 const Idx& idx0 = sortedPoints[duplicatePointIndex0];
-                const Idx& idx1 = sortedPoints[duplicatePointIndex1];
                 Vector2 point = adapt(_points[size_t(idx0)]);
 
                 return fail(TE_DuplicatePointsFound
                 {
                     .positionX = point.x,
                     .positionY = point.y,
-                    .idx0 = idx0,
-                    .idx1 = idx1
+                    .idx0 = duplicatePointIndex0,
+                    .idx1 = duplicatePointIndex1
                 });
             }
 
@@ -3575,7 +3576,8 @@ namespace detria
             // store an edge of the outline for later
             // also, don't store the edge, because it's possible that an edge is deleted and recreated with a different id later
             // storing two vertices guarantees that the edge will be valid later too
-            const ListNode& firstConvexHullNode = _convexHullPoints.getNode(0);
+            _convexHullStartIndex = lastPointId;
+            const ListNode& firstConvexHullNode = _convexHullPoints.getNode(_convexHullStartIndex);
             const ListNode& secondConvexHullNode = _convexHullPoints.getNode(firstConvexHullNode.nextId);
             convexHullVertex0 = TVertex(firstConvexHullNode.data);
             convexHullVertex1 = TVertex(secondConvexHullNode.data);
@@ -4565,6 +4567,7 @@ namespace detria
 
         // results which are not related to the triangulation directly
         List _convexHullPoints;
+        Idx _convexHullStartIndex = Idx(-1);
         CollectionWithAllocator<std::optional<Idx>> _parentPolylines;
 
         struct TopologyEdgeWithVertices
