@@ -80,8 +80,8 @@ std::string DurationToString(std::chrono::duration<Rep, Period> duration)
     return str;
 }
 
-// for handling test files from poly2tri
-// from https://github.com/jhasse/poly2tri/blob/master/testbed/main.cc
+// For handling test files from poly2tri
+// From https://github.com/jhasse/poly2tri/blob/master/testbed/main.cc
 template <typename Point>
 bool ParseFileP2T(const std::filesystem::path& filePath, std::vector<Point>& out_polyline, std::vector<std::vector<Point>>& out_holes,
     std::vector<Point>& out_steiner)
@@ -233,7 +233,7 @@ bool ReadFileP2T(const std::filesystem::path& path, std::vector<Point>& allPoint
     }
 }
 
-// for handling test files
+// For handling test files
 template <typename Point, typename Idx>
 bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, std::vector<Polyline<Idx>>& resultPolylines,
     std::vector<std::pair<Idx, Idx>>& resultManuallyConstrainedEdges)
@@ -246,7 +246,7 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
         return false;
     }
 
-    // file structure:
+    // File structure:
     // numVertices numPolylines numManuallyConstrainedEdges
     // for numPolylines: numVerticesInPolyline
     // list of vertices (x, y)
@@ -263,7 +263,7 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
         std::vector<size_t> polylineLengths;
         polylineLengths.reserve(numPolylines);
 
-        // read polyline lengths
+        // Read polyline lengths
         for (size_t i = 0; i < numPolylines; ++i)
         {
             size_t length{ };
@@ -271,7 +271,7 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
             polylineLengths.push_back(length);
         }
 
-        // read vertices
+        // Read vertices
         allPoints.reserve(numVertices);
         for (size_t i = 0; i < numVertices; ++i)
         {
@@ -281,7 +281,7 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
             allPoints.emplace_back(Point{ .x = x, .y = y });
         }
 
-        // read polylines
+        // Read polylines
         for (size_t i = 0; i < numPolylines; ++i)
         {
             size_t numVerticesInPolyline = polylineLengths[i];
@@ -300,7 +300,7 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
             }
         }
 
-        // read manually constrained edges
+        // Read manually constrained edges
         resultManuallyConstrainedEdges.reserve(numManuallyConstrainedEdges);
         for (size_t i = 0; i < numManuallyConstrainedEdges; ++i)
         {
@@ -355,10 +355,10 @@ bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::p
 
     if (success)
     {
-        // test export
+        // Test export
 
-        // if there are no polylines, then export the entire triangulation
-        // otherwise, only export the interior triangles
+        // If there are no polylines, then export the entire triangulation
+        // Otherwise, only export the interior triangles
         detria::TriangleLocation exportLocation = polylines.empty() ? detria::TriangleLocation::All : detria::TriangleLocation::Interior;
 
         std::vector<detria::Triangle<Idx>> triangles;
@@ -379,7 +379,7 @@ bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::p
     return success;
 }
 
-// simple seeded random number generator
+// Simple seeded random number generator
 struct Mulberry32
 {
     Mulberry32(uint32_t seed) : _state(seed)
@@ -404,9 +404,9 @@ using Scalar = double;
 using Point = detria::Vec2<Scalar>;
 using Idx = uint32_t;
 
-bool RandomTest()
+static bool RandomTest()
 {
-    // generate some random points, and triangulate them
+    // Generate some random points, and triangulate them
 
     std::vector<size_t> randomPointCounts = { 3, 10, 100, 1000, 100000 };
     constexpr Scalar minSize = Scalar(-10);
@@ -426,7 +426,7 @@ bool RandomTest()
 
     detria::Triangulation<Point, Idx> tri;
 
-    // first 4 point indices, 
+    // First 4 point indices
     std::vector<Idx> constrainedEdgeIndices{ 0, 1, 2, 3 };
 
     auto doRandomTest = [&](bool addConstrainedEdges, bool delaunay)
@@ -437,7 +437,7 @@ bool RandomTest()
 
             std::vector<Point> points;
 
-            // if addConstrainedEdges is true, then we "enclose" the points in a box, and add the points as steiner points
+            // If addConstrainedEdges is true, then we "enclose" the points in a box, and add the points as steiner points
             if (addConstrainedEdges)
             {
                 points =
@@ -495,7 +495,7 @@ bool RandomTest()
     return success;
 }
 
-void fractal(int depth, float cx, float cy, float size, float thickness, std::vector<Point>& points, std::vector<Polyline<Idx>>& polylines)
+static void fractal(int depth, float cx, float cy, float size, float thickness, std::vector<Point>& points, std::vector<Polyline<Idx>>& polylines)
 {
     Idx startIndex = Idx(points.size());
 
@@ -509,7 +509,7 @@ void fractal(int depth, float cx, float cy, float size, float thickness, std::ve
         .type = PolylineType::AutoDetect
     });
 
-#if false // can get a different fractal with this
+#if false // Can get a different fractal with this
     points.emplace_back(Point{ cx - size + thickness, cy - size + thickness });
     points.emplace_back(Point{ cx + size - thickness, cy - size + thickness });
     points.emplace_back(Point{ cx + size - thickness, cy + size - thickness });
@@ -535,7 +535,7 @@ void fractal(int depth, float cx, float cy, float size, float thickness, std::ve
     }
 }
 
-bool FractalTest()
+static bool FractalTest()
 {
     std::vector<Point> points;
     std::vector<Polyline<Idx>> polylines;
@@ -553,7 +553,7 @@ bool FractalTest()
 
     auto testConvexHullAndPolylineParent = [&]()
     {
-        // polyline 0 should be top-level, so no parent
+        // Polyline 0 should be top-level, so no parent
         std::optional parentIdx = tri.getParentPolylineIndex(0);
         if (parentIdx.has_value())
         {
@@ -571,7 +571,7 @@ bool FractalTest()
             return false;
         }
 
-        // the convex hull should be "0 3 2 1" (or anything which has the same order, e.g. "2 1 0 3" etc.)
+        // The convex hull should be "0 3 2 1" (or anything which has the same order, e.g. "2 1 0 3" etc.)
         size_t zeroIndex{ };
         for (size_t i = 0; i < convexHullVertices.size(); ++i)
         {

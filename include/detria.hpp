@@ -3,9 +3,9 @@
 // Example usage:
 /*
 
-// create a square, and triangulate it
+// Create a square, and triangulate it
 
-// list of points (positions)
+// List of points (positions)
 std::vector<detria::PointD> points =
 {
     { 0.0, 0.0 },
@@ -14,7 +14,7 @@ std::vector<detria::PointD> points =
     { 0.0, 1.0 }
 };
 
-// list of point indices
+// List of point indices
 std::vector<uint32_t> outline = { 0, 1, 2, 3 };
 
 bool delaunay = true;
@@ -198,7 +198,8 @@ namespace detria
                 }
                 everyOther = !everyOther;
                 check = Scalar(1) + epsilon;
-            } while (check != Scalar(1) && (check != lastcheck));
+            }
+            while (check != Scalar(1) && (check != lastcheck));
 
             splitter += Scalar(1);
 
@@ -1192,7 +1193,7 @@ namespace detria
 
     namespace detail
     {
-        // forward declare
+        // Forward declare
 
         bool detriaAssert(bool condition, const char* message = nullptr);
     }
@@ -1258,32 +1259,6 @@ namespace detria
                 return CircleLocation::Cocircular;
             }
         }
-
-        inline constexpr bool isPowerOfTwo(uint64_t num)
-        {
-            return (num != 0) && ((num - 1) & num) == 0;
-        }
-
-        inline constexpr uint64_t nextPowerOfTwo(uint64_t num)
-        {
-            num |= num >> 1;
-            num |= num >> 2;
-            num |= num >> 4;
-            num |= num >> 8;
-            num |= num >> 16;
-            num |= num >> 32;
-            return num + 1;
-        }
-
-        inline constexpr uint64_t nextOrEqualPowerOfTwo(uint64_t num)
-        {
-            if (!isPowerOfTwo(num))
-            {
-                num = nextPowerOfTwo(num);
-            }
-
-            return num;
-        }
     }
 
     namespace memory
@@ -1327,14 +1302,14 @@ namespace detria
 
     namespace detail
     {
-        // simple zero-sized struct
+        // Simple zero-sized struct
         struct Empty { };
 
         template <typename T, typename Idx, template <typename, typename> typename Collection, typename Allocator>
         struct FlatLinkedList
         {
-            // simple cyclic doubly-linked list, but the elements are not allocated one-by-one
-            // the indices of the deleted elements are stored in `free`
+            // Simple cyclic doubly-linked list, but the elements are not allocated one-by-one
+            // The indices of the deleted elements are stored in `free`
 
             struct Node
             {
@@ -1440,7 +1415,7 @@ namespace detria
 #ifdef NDEBUG
             (void)message;
 #else
-            // only in debug mode
+            // Only in debug mode
 
             std::cerr << "Assertion failed";
             if (message)
@@ -1462,7 +1437,7 @@ namespace detria
             return false;
         }
 
-        // similar to std::span, but without C++20, also much simpler
+        // Similar to std::span, but without C++20, also much simpler
         template <typename T>
         struct ReadonlySpan
         {
@@ -1510,7 +1485,7 @@ namespace detria
             size_t _count;
         };
 
-        // helper to decide if a type has a `reserve` function
+        // Helper to decide if a type has a `reserve` function
         template <template <typename, typename> typename, typename = void>
         struct HasReserve
         {
@@ -1526,972 +1501,433 @@ namespace detria
 
     namespace topology
     {
-        template <typename Idx>
-        inline Idx next3(const Idx& idx)
-        {
-            // 0 -> 1
-            // 1 -> 2
-            // 2 -> 0
-            return idx == 2 ? 0 : idx + 1;
-        }
-
-        template <typename Idx>
-        inline Idx prev3(const Idx& idx)
-        {
-            // 0 -> 2
-            // 1 -> 0
-            // 2 -> 1
-            return idx == 0 ? 2 : idx - 1;
-        }
-
-        template <typename Idx>
-        inline Idx other3(const Idx& a, const Idx& b)
-        {
-            // 0 1 or 1 0 -> 2
-            // 0 2 or 2 0 -> 1
-            // 1 2 or 2 1 -> 0
-            return 3 - (a + b);
-        }
-
-        template <typename T, typename Idx, template <typename, typename> typename Collection, typename Allocator>
-        class FreeList
-        {
-            // class to store elements sequentially, with the ability to delete elements from anywhere
-            // `firstFree` indicates the first free slot (if any), that free slot indicates the next one (if any), and so on
-
-            static constexpr bool collectionHasReserve = detail::HasReserve<Collection>::value;
-
-        public:
-            FreeList(Allocator allocator) : _allData(allocator.template createStlAllocator<Data>())
-            {
-            }
-
-            inline void reserve(Idx capacity)
-            {
-                if constexpr (collectionHasReserve)
-                {
-                    _allData.reserve(size_t(capacity));
-                }
-            }
-
-            inline Idx add(const T& data)
-            {
-                Idx result{ };
-                if (_firstFree.has_value())
-                {
-                    // free slot available, add it there
-                    result = *_firstFree;
-                    Data& currentData = _allData[size_t(result)];
-
-                    if (const FreeData* freeData = std::get_if<FreeData>(&currentData))
-                    {
-                        _firstFree = freeData->nextFree;
-                    }
-                    else
-                    {
-                        detail::detriaAssert(false, "Free slot expected");
-                    }
-
-                    currentData = ValidData{ data };
-                }
-                else
-                {
-                    // no free slots, add at the end
-                    result = Idx(_allData.size());
-                    _allData.emplace_back(ValidData{ data });
-                }
-
-                ++_validCount;
-
-                return result;
-            }
-
-            inline bool remove(Idx index)
-            {
-                if (!isValid(index) || index > Idx(_allData.size())) DETRIA_UNLIKELY
-                {
-                    return false;
-                }
-
-                if (index == Idx(_allData.size() - 1))
-                {
-                    // remove from the end
-                    _allData.pop_back();
-                }
-                else
-                {
-                    _allData[size_t(index)] = FreeData{ _firstFree };
-                    _firstFree = index;
-                }
-
-                --_validCount;
-                return true;
-            }
-
-            inline bool isValid(const Idx& id) const
-            {
-                return size_t(id) < _allData.size() && std::holds_alternative<ValidData>(_allData[size_t(id)]);
-            }
-
-            inline void clear()
-            {
-                _validCount = 0;
-                _firstFree.reset();
-                _allData.clear();
-            }
-
-            // total number of valid + deleted elements
-            inline Idx getUsedCount() const
-            {
-                return Idx(_allData.size());
-            }
-
-            inline const T* getData(const Idx& index) const
-            {
-                if (const ValidData* data = std::get_if<ValidData>(&_allData[size_t(index)])) DETRIA_LIKELY
-                {
-                    return &data->data;
-                }
-
-                detail::detriaAssert(false, "No valid element at the given index");
-                return nullptr;
-            }
-
-            inline T* getData(const Idx& index)
-            {
-                if (ValidData* data = std::get_if<ValidData>(&_allData[size_t(index)])) DETRIA_LIKELY
-                {
-                    return &data->data;
-                }
-
-                detail::detriaAssert(false, "No valid element at the given index");
-                return nullptr;
-            }
-
-            inline void forEachValid(auto&& callback) const
-            {
-                constexpr bool callbackReturnsBool = std::is_same_v<bool, std::invoke_result_t<decltype(callback), Idx>>;
-
-                for (Idx i = 0; i < Idx(_allData.size()); ++i)
-                {
-                    if (!isValid(i))
-                    {
-                        continue;
-                    }
-
-                    if constexpr (callbackReturnsBool)
-                    {
-                        bool shouldContinue = callback(i);
-                        if (!shouldContinue)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        callback(i);
-                    }
-                }
-            }
-
-        private:
-            struct FreeData
-            {
-                std::optional<Idx> nextFree;
-            };
-
-            struct ValidData
-            {
-                T data;
-            };
-
-            using Data = std::variant<FreeData, ValidData>;
-
-            Idx _validCount = 0; // number of valid, non-deleted elements
-
-            Collection<Data, typename Allocator::template StlAllocator<Data>> _allData;
-            std::optional<Idx> _firstFree{ };
-        };
-
-        template <typename Idx, Idx Degree, template <typename, typename> typename Collection, typename Allocator>
-        class PrimitiveRelations
-        {
-            // class to store relations between primitives (e.g. triangle-vertex)
-            // we always have two different primitive types:
-            // triangle-vertex (3 vertices per triangle), triangle-edge (3 edges per triangle), edge-vertex (2 vertices per edge)
-            // the parent type is the higher dimensional type, the child type is the lower dimensional one (e.g. parent: triangle, child: vertex)
-            //
-            // in the parent -> child direction, each element must have `Degree` primitives:
-            // a triangle must always have 3 vertices and edges, and an edge must always have 2 vertices
-            // in the child -> parent direction, each element can have any number of primitives:
-            // a vertex can have any number of triangles and any number of edges,
-            // and an edge can have any number of triangles (though in practice, we'll only have 2 triangles per edge at most)
-            //
-            // the `RelationId` type uniquely identifies a child of a parent, e.g. the second vertex of a triangle
-            // it simply contains the parent's id shifted to the left, or-ed with the index of the child in the parent
-            // for triangles, 4 child elements are stored for faster calculation (`something * 3` is slower to calculate than `something << 2`)
-            // for example, vertex 2 of triangle 19 is stored at index 78 (== (19 << 2) | 2)
-            // 
-            // `_children` simply contains all children, indexed by `RelationId` values
-            // (e.g. first vertex of first triangle, then second vertex of first triangle, etc.)
-            // `_firstParent` and `_nextParent` work like a linked list
-            // `_firstParent` is indexed with child id-s, and contains the first relation for each child (if any)
-            // `_nextParent` is indexed with relation id-s, and contains the next relation (if any)
-            // the end of the list is indicated with an `EmptyIndex` value
-
-        private:
-            static_assert(Degree == 2 || Degree == 3);
-            // using power of 2 multipliers for faster multiplications / divisions
-            // for example, for triangles, we use 4 elements instead of 3
-            // the 4th element is never used, so it wastes some space, but still better than dividing by 3
-            static constexpr Idx DegreePow2 = Degree <= 2 ? 2 : 4;
-            static constexpr Idx Pow2 = DegreePow2 == 4 ? 2 : 1;
-
-            static constexpr Idx EmptyIndex = Idx(-1);
-
-        public:
-            struct RelationId
-            {
-                inline RelationId(Idx value_ = EmptyIndex) : value(value_)
-                {
-                }
-
-                Idx value;
-            };
-
-            PrimitiveRelations(Allocator allocator) :
-                _children(allocator.template createStlAllocator<Idx>()),
-                _firstParent(allocator.template createStlAllocator<RelationId>()),
-                _nextParent(allocator.template createStlAllocator<RelationId>())
-            {
-            }
-
-            inline void reserveChildToParent(Idx capacity)
-            {
-                if (_childToParentCapacity >= capacity)
-                {
-                    return;
-                }
-
-                capacity = Idx(math::nextOrEqualPowerOfTwo(uint64_t(capacity)));
-                _nextParent.resize(size_t(capacity) << size_t(Pow2), EmptyIndex);
-                _children.resize(size_t(capacity) << size_t(Pow2), EmptyIndex);
-
-                _childToParentCapacity = capacity;
-            }
-
-            inline void reserveParentToChild(Idx capacity)
-            {
-                if (_parentToChildCapacity >= capacity)
-                {
-                    return;
-                }
-
-                capacity = Idx(math::nextOrEqualPowerOfTwo(uint64_t(capacity)));
-                _firstParent.resize(size_t(capacity), EmptyIndex);
-
-                _parentToChildCapacity = capacity;
-            }
-
-            inline static RelationId getRelationId(Idx parentId, Idx childIndexInParent)
-            {
-                return (parentId << Pow2) | childIndexInParent;
-            }
-
-            inline Idx getChildId(RelationId relationId) const
-            {
-                return _children[size_t(relationId.value)];
-            }
-
-            inline Idx getChildId(Idx parentId, Idx childIndexInParent) const
-            {
-                return getChildId(getRelationId(parentId, childIndexInParent));
-            }
-
-            inline Idx getChildIndexInParent(Idx parentId, Idx childId) const
-            {
-                for (Idx i = 0; i < Degree; ++i)
-                {
-                    if (_children[size_t(getRelationId(parentId, i).value)] == childId)
-                    {
-                        return i;
-                    }
-                }
-
-                return EmptyIndex;
-            }
-
-            inline RelationId getFirstParent(Idx childId) const
-            {
-                return _firstParent[size_t(childId)];
-            }
-
-            inline RelationId getNextParent(RelationId relationId) const
-            {
-                return _nextParent[size_t(relationId.value)];
-            }
-
-            inline void addRelation(RelationId relationId, Idx childId)
-            {
-                _children[size_t(relationId.value)] = childId;
-
-                // append new parent at front
-                _nextParent[size_t(relationId.value)] = _firstParent[size_t(childId)];
-                _firstParent[size_t(childId)] = relationId.value;
-            }
-
-            inline void addRelation(Idx parentId, Idx childId, Idx childIndexInParent)
-            {
-                addRelation(getRelationId(parentId, childIndexInParent), childId);
-            }
-
-            inline void removeRelation(RelationId relationIdToRemove)
-            {
-                Idx childId = _children[size_t(relationIdToRemove.value)];
-                _children[size_t(relationIdToRemove.value)] = EmptyIndex;
-
-                RelationId* relationId = &_firstParent[size_t(childId)];
-
-                // find `relationIdToRemove`
-                while (relationId->value != EmptyIndex)
-                {
-                    if (relationId->value == relationIdToRemove.value)
-                    {
-                        // relation found, replace it with the next one
-                        *relationId = _nextParent[size_t(relationId->value)];
-                        break;
-                    }
-                    else
-                    {
-                        relationId = &_nextParent[size_t(relationId->value)];
-                    }
-                }
-            }
-
-            inline void replaceChild(RelationId relationId, Idx newChildId)
-            {
-                removeRelation(relationId);
-                addRelation(relationId, newChildId);
-            }
-
-            inline void removeParent(Idx parentId)
-            {
-                for (Idx i = 0; i < Degree; ++i)
-                {
-                    removeRelation(getRelationId(parentId, i));
-                }
-            }
-
-            inline void clear()
-            {
-                _parentToChildCapacity = 0;
-                _childToParentCapacity = 0;
-
-                _children.clear();
-                _firstParent.clear();
-                _nextParent.clear();
-            }
-
-        private:
-            Idx _parentToChildCapacity = Idx(0);
-            Idx _childToParentCapacity = Idx(0);
-
-            Collection<Idx, typename Allocator::template StlAllocator<Idx>> _children;
-            Collection<RelationId, typename Allocator::template StlAllocator<RelationId>> _firstParent;
-            Collection<RelationId, typename Allocator::template StlAllocator<RelationId>> _nextParent;
-        };
-
         template <
             typename Idx,
             typename VertexData,
             typename EdgeData,
-            typename TriangleData,
             template <typename, typename> typename Collection,
             typename Allocator
         >
-        class TopologyMesh
+        struct Topology
         {
-            // class for creating topology between vertices, edges, and triangles
-            // we can get neighbors, iterate over edges of a vertex, etc.
-            // we can also store data for each primitive
-            // most of the implementation is already done in `FreeList` and `PrimitiveRelations`, this class connects it all together
+            // Using half-edges for storing vertex relations
+            // Each vertex has outgoing half-edges (only the first edge is stored)
+            // The rest of the edges going around a given vertex are stored in a doubly-linked list
+            // The half-edges are also paired with an opposite edge, which references the other vertex
+            // The triangles are not stored, since the topology is constructed in a way that the edges are not intersecting,
+            // and the triangles can always be calculated from the stored data (the triangles are calculated at the final step of the triangulation)
+            // For example:
+            //
+            //            v1  e13     e31  v3
+            //             *------   ------*
+            //            / \             /
+            //       e10 /   \ e12       / e32
+            //          /     \         /
+            //
+            //        /         \     /
+            //   e01 /       e21 \   / e23
+            //      /             \ /
+            //  v0 *------   ------* v2
+            //        e02     e20
+            //
+            // v0.firstEdge == e01
+            // e01.opposite == e10
+            // e01.opposite.vertex == v1
+            // e01.nextEdge == e02
+            // e01.prevEdge == e02
+            // e20.nextEdge == e21
+            // e21.prevEdge == e23
+
+            static constexpr Idx NullIndex = (Idx)-1;
 
             static constexpr bool collectionHasReserve = detail::HasReserve<Collection>::value;
 
-        public:
-            TopologyMesh(Allocator allocator) :
-                _triangleToVertex(allocator),
-                _triangleToEdge(allocator),
-                _edgeToVertex(allocator),
-                _vertices(allocator),
-                _edges(allocator),
-                _triangles(allocator)
+            struct VertexIndex
             {
-            }
+                inline explicit VertexIndex(Idx index) : index(index)
+                {
+                }
 
-        private:
-            static constexpr Idx EmptyIndex = Idx(-1);
+                inline VertexIndex() : index(NullIndex)
+                {
+                }
 
-        public:
+                inline bool operator==(const VertexIndex&) const = default;
+
+                inline bool isValid() const
+                {
+                    return index != NullIndex;
+                }
+
+                Idx index;
+            };
+
+            struct HalfEdgeIndex
+            {
+                inline explicit HalfEdgeIndex(Idx index) : index(index)
+                {
+                }
+
+                inline HalfEdgeIndex() : index(NullIndex)
+                {
+                }
+
+                inline bool operator==(const HalfEdgeIndex&) const = default;
+
+                inline bool isValid() const
+                {
+                    return index != NullIndex;
+                }
+
+                Idx index;
+            };
+
             struct Vertex
             {
-                inline explicit Vertex(Idx idx = EmptyIndex) : index(idx)
-                {
-                }
+                HalfEdgeIndex firstEdge = HalfEdgeIndex(NullIndex);
 
-                inline bool valid() const
-                {
-                    return index != EmptyIndex;
-                }
-
-                Idx index;
+                VertexData data;
             };
 
-            struct Edge
+            struct HalfEdge
             {
-                inline explicit Edge(Idx idx = EmptyIndex) : index(idx)
-                {
-                }
+                VertexIndex vertex;
+                HalfEdgeIndex opposite;
+                HalfEdgeIndex prevEdge;
+                HalfEdgeIndex nextEdge;
 
-                inline bool valid() const
-                {
-                    return index != EmptyIndex;
-                }
-
-                Idx index;
+                EdgeData data;
             };
 
-            struct Triangle
+            Topology(Allocator allocator) :
+                _vertices(allocator.template createStlAllocator<Vertex>()),
+                _edges(allocator.template createStlAllocator<HalfEdge>())
             {
-                inline explicit Triangle(Idx idx = EmptyIndex) : index(idx)
-                {
-                }
-
-                inline bool valid() const
-                {
-                    return index != EmptyIndex;
-                }
-
-                Idx index;
-            };
-
-            struct VertexToEdgeRelation
-            {
-                inline VertexToEdgeRelation(Idx relationId) : value(relationId)
-                {
-                }
-
-                inline VertexToEdgeRelation(Edge edge, Idx indexInEdge) : value((edge.index << 1) | indexInEdge)
-                {
-                }
-
-                inline Edge edge() const
-                {
-                    return Edge(value >> 1);
-                }
-
-                inline Idx indexInEdge() const
-                {
-                    return value & 1;
-                }
-
-                inline bool valid() const
-                {
-                    return value != EmptyIndex;
-                }
-
-                Idx value;
-            };
-
-            struct VertexToTriangleRelation
-            {
-                inline VertexToTriangleRelation(Idx relationId) : value(relationId)
-                {
-                }
-
-                inline VertexToTriangleRelation(Triangle triangle, Idx indexInTriangle) : value((triangle.index << 2) | indexInTriangle)
-                {
-                }
-
-                inline Triangle triangle() const
-                {
-                    return Triangle(value >> 2);
-                }
-
-                inline Idx indexInTriangle() const
-                {
-                    return value & 3;
-                }
-
-                inline bool valid() const
-                {
-                    return value != EmptyIndex;
-                }
-
-                Idx value;
-            };
-
-            struct EdgeToTriangleRelation
-            {
-                inline EdgeToTriangleRelation(Idx relationId) : value(relationId)
-                {
-                }
-
-                inline EdgeToTriangleRelation(Triangle triangle, Idx indexInTriangle) : value((triangle.index << 2) | indexInTriangle)
-                {
-                }
-
-                inline Triangle triangle() const
-                {
-                    return Triangle(value >> 2);
-                }
-
-                inline Idx indexInTriangle() const
-                {
-                    return value & 3;
-                }
-
-                inline bool valid() const
-                {
-                    return value != EmptyIndex;
-                }
-
-                Idx value;
-            };
-
-            inline Vertex getVertexOfTriangle(Triangle triangle, Idx vertexIndexInTriangle) const
-            {
-                return Vertex(_triangleToVertex.getChildId(triangle.index, vertexIndexInTriangle));
             }
 
-            inline Edge getEdgeOfTriangle(Triangle triangle, Idx edgeIndexInTriangle) const
+            inline void clear()
             {
-                return Edge(_triangleToEdge.getChildId(triangle.index, edgeIndexInTriangle));
+                _vertices.clear();
+                _edges.clear();
             }
 
-            inline Vertex getVertexOfEdge(Edge edge, Idx vertexIndexInEdge) const
+            inline void reserveVertices(size_t capacity)
             {
-                return Vertex(_edgeToVertex.getChildId(edge.index, vertexIndexInEdge));
-            }
-
-            inline Vertex getOtherVertexOfEdge(VertexToEdgeRelation relation) const
-            {
-                return Vertex(_edgeToVertex.getChildId(relation.value ^ 1));
-            }
-
-            inline Vertex getOppositeVertexInTriangle(EdgeToTriangleRelation relation) const
-            {
-                return Vertex(_triangleToVertex.getChildId(relation.value));
-            }
-
-            inline Edge getOppositeEdgeInTriangle(VertexToTriangleRelation relation) const
-            {
-                return Edge(_triangleToEdge.getChildId(relation.value));
-            }
-
-            inline Idx getVertexIndexInTriangle(Triangle triangle, Vertex vertex) const
-            {
-                return _triangleToVertex.getChildIndexInParent(triangle.index, vertex.index);
-            }
-
-            inline Idx getEdgeIndexInTriangle(Triangle triangle, Edge edge) const
-            {
-                return _triangleToEdge.getChildIndexInParent(triangle.index, edge.index);
-            }
-
-            inline Idx getVertexIndexInEdge(Edge edge, Vertex vertex) const
-            {
-                return _edgeToVertex.getChildIndexInParent(edge.index, vertex.index);
-            }
-
-            inline VertexToEdgeRelation getFirstEdgeOfVertex(Vertex vertex) const
-            {
-                return _edgeToVertex.getFirstParent(vertex.index).value;
-            }
-
-            inline VertexToTriangleRelation getFirstTriangleOfVertex(Vertex vertex) const
-            {
-                return _triangleToVertex.getFirstParent(vertex.index).value;
-            }
-
-            inline EdgeToTriangleRelation getFirstTriangleOfEdge(Edge edge) const
-            {
-                return _triangleToEdge.getFirstParent(edge.index).value;
-            }
-
-            inline VertexToEdgeRelation getNext(VertexToEdgeRelation relation) const
-            {
-                return _edgeToVertex.getNextParent(relation.value).value;
-            }
-
-            inline VertexToTriangleRelation getNext(VertexToTriangleRelation relation) const
-            {
-                return _triangleToVertex.getNextParent(relation.value).value;
-            }
-
-            inline EdgeToTriangleRelation getNext(EdgeToTriangleRelation relation) const
-            {
-                return _triangleToEdge.getNextParent(relation.value).value;
-            }
-
-            inline Idx getVertexUsedCount() const
-            {
-                return _vertices.getUsedCount();
-            }
-
-            inline Idx getEdgeUsedCount() const
-            {
-                return _edges.getUsedCount();
-            }
-
-            inline Idx getTriangleUsedCount() const
-            {
-                return _triangles.getUsedCount();
-            }
-
-            inline bool isVertexValid(const Vertex& v) const
-            {
-                return _vertices.isValid(v.index);
-            }
-
-            inline bool isEdgeValid(const Edge& e) const
-            {
-                return _edges.isValid(e.index);
-            }
-
-            inline bool isTriangleValid(const Triangle& t) const
-            {
-                return _triangles.isValid(t.index);
-            }
-
-            inline void forEachVertex(auto&& callback) const
-            {
-                _vertices.forEachValid([&](const Idx& id)
-                {
-                    callback(Vertex(id));
-                });
-            }
-
-            inline void forEachEdge(auto&& callback) const
-            {
-                _edges.forEachValid([&](const Idx& id)
-                {
-                    callback(Edge(id));
-                });
-            }
-
-            inline void forEachTriangle(auto&& callback) const
-            {
-                _triangles.forEachValid([&](const Idx& id)
-                {
-                    callback(Triangle(id));
-                });
-            }
-
-            inline void forEachEdgeOfVertex(const Vertex& v, auto&& callback) const
-            {
-                constexpr bool callbackReturnsBool = std::is_same_v<bool, std::invoke_result_t<decltype(callback), VertexToEdgeRelation>>;
-
-                for (VertexToEdgeRelation relation = getFirstEdgeOfVertex(v); relation.valid(); relation = getNext(relation))
-                {
-                    if constexpr (callbackReturnsBool)
-                    {
-                        bool shouldContinue = callback(relation);
-                        if (!shouldContinue)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        callback(relation);
-                    }
-                }
-            }
-
-            inline void forEachTriangleOfVertex(const Vertex& v, auto&& callback) const
-            {
-                constexpr bool callbackReturnsBool = std::is_same_v<bool, std::invoke_result_t<decltype(callback), VertexToTriangleRelation>>;
-
-                for (VertexToTriangleRelation relation = getFirstTriangleOfVertex(v); relation.valid(); relation = getNext(relation))
-                {
-                    if constexpr (callbackReturnsBool)
-                    {
-                        bool shouldContinue = callback(relation);
-                        if (!shouldContinue)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        callback(relation);
-                    }
-                }
-            }
-
-            inline void forEachTriangleOfEdge(const Edge& e, auto&& callback) const
-            {
-                constexpr bool callbackReturnsBool = std::is_same_v<bool, std::invoke_result_t<decltype(callback), EdgeToTriangleRelation>>;
-
-                for (EdgeToTriangleRelation relation = getFirstTriangleOfEdge(e); relation.valid(); relation = getNext(relation))
-                {
-                    if constexpr (callbackReturnsBool)
-                    {
-                        bool shouldContinue = callback(relation);
-                        if (!shouldContinue)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        callback(relation);
-                    }
-                }
-            }
-
-            inline const VertexData* getVertexData(const Vertex& vertex) const
-            {
-                return _vertices.getData(vertex.index);
-            }
-
-            inline VertexData* getVertexData(const Vertex& vertex)
-            {
-                return _vertices.getData(vertex.index);
-            }
-
-            inline bool setVertexData(const Vertex& vertex, const VertexData& newData)
-            {
-                VertexData* data = getVertexData(vertex);
-                if (data == nullptr) DETRIA_UNLIKELY
-                {
-                    return false;
-                }
-
-                *data = newData;
-                return true;
-            }
-
-            inline const EdgeData* getEdgeData(const Edge& edge) const
-            {
-                return _edges.getData(edge.index);
-            }
-
-            inline EdgeData* getEdgeData(const Edge& edge)
-            {
-                return _edges.getData(edge.index);
-            }
-
-            inline bool setEdgeData(const Edge& edge, const EdgeData& newData)
-            {
-                EdgeData* data = getEdgeData(edge);
-                if (data == nullptr) DETRIA_UNLIKELY
-                {
-                    return false;
-                }
-
-                *data = newData;
-                return true;
-            }
-
-            inline const TriangleData* getTriangleData(const Triangle& triangle) const
-            {
-                return _triangles.getData(triangle.index);
-            }
-
-            inline TriangleData* getTriangleData(const Triangle& triangle)
-            {
-                return _triangles.getData(triangle.index);
-            }
-
-            inline bool setTriangleData(const Triangle& triangle, const TriangleData& newData)
-            {
-                TriangleData* data = getTriangleData(triangle);
-                if (data == nullptr) DETRIA_UNLIKELY
-                {
-                    return false;
-                }
-
-                *data = newData;
-                return true;
-            }
-
-            inline void reserveVertices(const Idx& capacity)
-            {
-                _edgeToVertex.reserveParentToChild(capacity);
-                _triangleToVertex.reserveParentToChild(capacity);
-
                 if constexpr (collectionHasReserve)
                 {
                     _vertices.reserve(capacity);
                 }
             }
 
-            inline void reserveEdges(const Idx& capacity)
+            inline void reserveHalfEdges(size_t capacity)
             {
-                _edgeToVertex.reserveChildToParent(capacity);
-                _triangleToEdge.reserveParentToChild(capacity);
-
                 if constexpr (collectionHasReserve)
                 {
                     _edges.reserve(capacity);
                 }
             }
 
-            inline void reserveTriangles(const Idx& capacity)
+            inline VertexIndex createVertex()
             {
-                _triangleToEdge.reserveChildToParent(capacity);
-                _triangleToVertex.reserveChildToParent(capacity);
+                Idx idx = (Idx)_vertices.size();
 
-                if constexpr (collectionHasReserve)
+                _vertices.emplace_back();
+
+                return VertexIndex(idx);
+            }
+
+            inline Vertex& getVertex(VertexIndex idx)
+            {
+                return _vertices[idx.index];
+            }
+
+            inline const Vertex& getVertex(VertexIndex idx) const
+            {
+                return _vertices[idx.index];
+            }
+
+            inline HalfEdge& getEdge(HalfEdgeIndex idx)
+            {
+                return _edges[idx.index];
+            }
+
+            inline const HalfEdge& getEdge(HalfEdgeIndex idx) const
+            {
+                return _edges[idx.index];
+            }
+
+            inline VertexData& getVertexData(VertexIndex idx)
+            {
+                return getVertex(idx).data;
+            }
+
+            inline const VertexData& getVertexData(VertexIndex idx) const
+            {
+                return getVertex(idx).data;
+            }
+
+            inline EdgeData& getEdgeData(HalfEdgeIndex idx)
+            {
+                return getEdge(idx).data;
+            }
+
+            inline const EdgeData& getEdgeData(HalfEdgeIndex idx) const
+            {
+                return getEdge(idx).data;
+            }
+
+            inline size_t vertexCount() const
+            {
+                return _vertices.size();
+            }
+
+            inline size_t halfEdgeCount() const
+            {
+                return _edges.size();
+            }
+
+            inline HalfEdgeIndex getOpposite(HalfEdgeIndex idx) const
+            {
+                return getEdge(idx).opposite;
+            }
+
+            inline HalfEdgeIndex getEdgeBetween(VertexIndex a, VertexIndex b) const
+            {
+                HalfEdgeIndex existingEdge{ };
+
+                forEachEdgeOfVertex(a, [&](HalfEdgeIndex edge)
                 {
-                    _triangles.reserve(capacity);
-                }
-            }
-
-            inline Vertex createVertex(const VertexData& vertexData = { })
-            {
-                Vertex v(_vertices.add(vertexData));
-
-                _edgeToVertex.reserveParentToChild(_vertices.getUsedCount());
-                _triangleToVertex.reserveParentToChild(_vertices.getUsedCount());
-
-                return v;
-            }
-
-            inline void replaceVertexOfEdge(VertexToEdgeRelation relation, Vertex newVertex)
-            {
-                _edgeToVertex.replaceChild(relation.value, newVertex.index);
-            }
-
-            inline void replaceVertexOfTriangle(VertexToTriangleRelation relation, Vertex newVertex)
-            {
-                _triangleToVertex.replaceChild(relation.value, newVertex.index);
-            }
-
-            inline Edge createEdge(const Vertex& v0, const Vertex& v1, const EdgeData& data = { })
-            {
-                Edge e(_edges.add(data));
-
-                _edgeToVertex.reserveChildToParent(_edges.getUsedCount());
-                _triangleToEdge.reserveParentToChild(_edges.getUsedCount());
-
-                _edgeToVertex.addRelation(e.index, v0.index, 0);
-                _edgeToVertex.addRelation(e.index, v1.index, 1);
-
-                return e;
-            }
-
-            inline Edge getEdgeBetweenVertices(const Vertex& v0, const Vertex& v1) const
-            {
-                for (VertexToEdgeRelation relation = getFirstEdgeOfVertex(v0); relation.valid(); relation = getNext(relation))
-                {
-                    if (getOtherVertexOfEdge(relation).index == v1.index)
+                    HalfEdgeIndex oppositeEdgeIndex = getOpposite(edge);
+                    if (getEdge(oppositeEdgeIndex).vertex == b)
                     {
-                        return relation.edge();
+                        existingEdge = edge;
+                        return false;
                     }
-                }
 
-                return Edge();
+                    return true;
+                });
+
+                return existingEdge;
             }
 
-            inline Edge getOrCreateEdge(const Vertex& v0, const Vertex& v1)
+            inline HalfEdgeIndex createNewEdge(VertexIndex a, VertexIndex b, HalfEdgeIndex addAAfterThisEdge, HalfEdgeIndex addBAfterThisEdge,
+                HalfEdgeIndex reusedEdgeIndex = { })
             {
-                Edge edge = getEdgeBetweenVertices(v0, v1);
-                if (edge.valid())
+                // If the given edges are valid, the edge will be inserted after the given edges
+                // Otherwise the new edge will be added as the first edge of the given vertex
+                // This function should only be called if there is no edge between the given vertices
+
+                auto addHalfEdge = [this](HalfEdgeIndex newEdgeIndex, HalfEdgeIndex opposite, VertexIndex vertex, HalfEdgeIndex afterEdge)
                 {
-                    return edge;
-                }
+                    HalfEdge newEdge{ };
 
-                return createEdge(v0, v1);
-            }
+                    newEdge.opposite = opposite;
+                    newEdge.vertex = vertex;
 
-            inline void replaceEdgeOfTriangle(EdgeToTriangleRelation relation, Edge newEdge)
-            {
-                _triangleToEdge.replaceChild(relation.value, newEdge.index);
-            }
+                    if (afterEdge.isValid())
+                    {
+                        // Valid index, insert between the edges
 
-            inline Triangle createTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, Edge e0, Edge e1, Edge e2, const TriangleData& data = { })
-            {
-                Triangle t(_triangles.add(data));
+                        HalfEdge& originalEdge = getEdge(afterEdge);
+                        HalfEdgeIndex beforeEdge = originalEdge.nextEdge;
+                        HalfEdge& originalNextEdge = getEdge(beforeEdge);
 
-                _triangleToEdge.reserveChildToParent(_triangles.getUsedCount());
-                _triangleToVertex.reserveChildToParent(_triangles.getUsedCount());
+                        newEdge.prevEdge = afterEdge;
+                        newEdge.nextEdge = beforeEdge;
 
-                _triangleToEdge.addRelation(t.index, e0.index, 0);
-                _triangleToEdge.addRelation(t.index, e1.index, 1);
-                _triangleToEdge.addRelation(t.index, e2.index, 2);
+                        originalEdge.nextEdge = newEdgeIndex;
+                        originalNextEdge.prevEdge = newEdgeIndex;
+                    }
+                    else
+                    {
+                        // Null index, set as first edge
+                        Vertex& v = getVertex(vertex);
+                        v.firstEdge = newEdgeIndex;
 
-                _triangleToVertex.addRelation(t.index, v0.index, 0);
-                _triangleToVertex.addRelation(t.index, v1.index, 1);
-                _triangleToVertex.addRelation(t.index, v2.index, 2);
+                        // Set references to self
+                        newEdge.nextEdge = newEdgeIndex;
+                        newEdge.prevEdge = newEdgeIndex;
+                    }
 
-                return t;
-            }
+                    return newEdge;
+                };
 
-            inline Triangle createTriangle(const Vertex& v0, const Vertex& v1, const Vertex& v2, const TriangleData& data = { })
-            {
-                return createTriangle(v0, v1, v2, getOrCreateEdge(v1, v2), getOrCreateEdge(v2, v0), getOrCreateEdge(v0, v1), data);
-            }
+                bool reusedEdge = reusedEdgeIndex.isValid();
 
-            inline bool removeVertex(const Vertex& v)
-            {
-                return _vertices.remove(v.index);
-            }
+                HalfEdgeIndex newEdgeIndexA{ };
+                HalfEdgeIndex newEdgeIndexB{ };
 
-            inline bool removeEdge(const Edge& e)
-            {
-                if (!_edges.remove(e.index)) DETRIA_UNLIKELY
+                if (reusedEdge)
                 {
-                    return false;
+                    newEdgeIndexA = reusedEdgeIndex;
+                    newEdgeIndexB = getOpposite(reusedEdgeIndex);
                 }
-
-                _edgeToVertex.removeParent(e.index);
-                return true;
-            }
-
-            inline bool removeTriangle(const Triangle& t)
-            {
-                if (!_triangles.remove(t.index)) DETRIA_UNLIKELY
+                else
                 {
-                    return false;
+                    newEdgeIndexA = HalfEdgeIndex(Idx(_edges.size()));
+                    newEdgeIndexB = HalfEdgeIndex(Idx(_edges.size() + 1));
                 }
 
-                _triangleToEdge.removeParent(t.index);
-                _triangleToVertex.removeParent(t.index);
-                return true;
+                HalfEdge newEdgeA = addHalfEdge(newEdgeIndexA, newEdgeIndexB, a, addAAfterThisEdge);
+                HalfEdge newEdgeB = addHalfEdge(newEdgeIndexB, newEdgeIndexA, b, addBAfterThisEdge);
+
+                if (reusedEdge)
+                {
+                    _edges[size_t(newEdgeIndexA.index)] = newEdgeA;
+                    _edges[size_t(newEdgeIndexB.index)] = newEdgeB;
+                }
+                else
+                {
+                    _edges.emplace_back(std::move(newEdgeA));
+                    _edges.emplace_back(std::move(newEdgeB));
+                }
+
+                return newEdgeIndexA;
             }
 
-            inline void clear()
+            inline HalfEdgeIndex createOrGetEdge(VertexIndex a, VertexIndex b, HalfEdgeIndex afterEdgeA, HalfEdgeIndex afterEdgeB)
             {
-                _triangleToVertex.clear();
-                _triangleToEdge.clear();
-                _edgeToVertex.clear();
-                _vertices.clear();
-                _edges.clear();
-                _triangles.clear();
+                HalfEdgeIndex existingEdge = getEdgeBetween(a, b);
+                if (existingEdge.isValid())
+                {
+                    return *existingEdge;
+                }
+
+                return createNewEdge(a, b, afterEdgeA, afterEdgeB);
+            }
+
+            inline void forEachEdgeOfVertex(VertexIndex idx, auto callback) const
+            {
+                const Vertex& v = getVertex(idx);
+                if (!v.firstEdge.isValid())
+                {
+                    return;
+                }
+
+                HalfEdgeIndex firstEdge = v.firstEdge;
+                HalfEdgeIndex currentEdgeIndex = firstEdge;
+
+                constexpr bool callbackReturnsBoolean = std::is_same_v<std::invoke_result_t<decltype(callback), HalfEdgeIndex>, bool>;
+
+                do
+                {
+                    const HalfEdge& edge = getEdge(currentEdgeIndex);
+
+                    if constexpr (callbackReturnsBoolean)
+                    {
+                        if (!callback(currentEdgeIndex))
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        callback(currentEdgeIndex);
+                    }
+
+                    currentEdgeIndex = edge.nextEdge;
+                }
+                while (currentEdgeIndex != firstEdge);
+            }
+
+            inline void unlinkEdge(HalfEdgeIndex edgeIndex)
+            {
+                // Assuming the vertices of this edge have at least one other edge
+                // The first edge of the vertices will not be set correctly otherwise
+
+                HalfEdge& edge = getEdge(edgeIndex);
+                HalfEdge& opposite = getEdge(edge.opposite);
+
+                Vertex& v0 = getVertex(edge.vertex);
+                Vertex& v1 = getVertex(opposite.vertex);
+                v0.firstEdge = edge.nextEdge;
+                v1.firstEdge = opposite.nextEdge;
+
+                getEdge(edge.nextEdge).prevEdge = edge.prevEdge;
+                getEdge(edge.prevEdge).nextEdge = edge.nextEdge;
+
+                getEdge(opposite.nextEdge).prevEdge = opposite.prevEdge;
+                getEdge(opposite.prevEdge).nextEdge = opposite.nextEdge;
+            }
+
+            inline void flipEdge(HalfEdgeIndex edgeIndex)
+            {
+                //      0                 0
+                //      *                 *
+                //     /|\               / \
+                //    / | \             /   \
+                // 3 *  |  * 1  -->  3 *-----* 1
+                //    \ | /             \   /
+                //     \|/               \ /
+                //      *                 *
+                //      2                 2
+
+                // Setup all references
+                HalfEdge& edge = getEdge(edgeIndex);
+                HalfEdgeIndex oppositeIndex = edge.opposite;
+                HalfEdge& opposite = getEdge(oppositeIndex);
+
+                HalfEdgeIndex e01i = edge.prevEdge;
+                HalfEdgeIndex e03i = edge.nextEdge;
+                HalfEdgeIndex e21i = opposite.nextEdge;
+                HalfEdgeIndex e23i = opposite.prevEdge;
+                HalfEdge& e01 = getEdge(e01i);
+                HalfEdge& e03 = getEdge(e03i);
+                HalfEdge& e21 = getEdge(e21i);
+                HalfEdge& e23 = getEdge(e23i);
+
+                HalfEdgeIndex e10i = e01.opposite;
+                HalfEdgeIndex e30i = e03.opposite;
+                HalfEdgeIndex e12i = e21.opposite;
+                HalfEdgeIndex e32i = e23.opposite;
+                HalfEdge& e10 = getEdge(e10i);
+                HalfEdge& e30 = getEdge(e30i);
+                HalfEdge& e12 = getEdge(e12i);
+                HalfEdge& e32 = getEdge(e32i);
+
+                Vertex& v0 = getVertex(edge.vertex);
+                Vertex& v2 = getVertex(opposite.vertex);
+
+                // Unlink the edge
+                e01.nextEdge = e03i;
+                e03.prevEdge = e01i;
+                e23.nextEdge = e21i;
+                e21.prevEdge = e23i;
+
+                // Technically we only need to change firstEdge if it's the flipped edge, but we can avoid a branch if we always set it
+                v0.firstEdge = e01i;
+                v2.firstEdge = e23i;
+
+                // Re-link edge as flipped
+                edge.prevEdge = e12i;
+                edge.nextEdge = e10i;
+                e10.prevEdge = edgeIndex;
+                e12.nextEdge = edgeIndex;
+
+                opposite.prevEdge = e30i;
+                opposite.nextEdge = e32i;
+                e32.prevEdge = oppositeIndex;
+                e30.nextEdge = oppositeIndex;
+
+                edge.vertex = e10.vertex;
+                opposite.vertex = e32.vertex;
             }
 
         private:
-            PrimitiveRelations<Idx, 3, Collection, Allocator> _triangleToVertex;
-            PrimitiveRelations<Idx, 3, Collection, Allocator> _triangleToEdge;
-            PrimitiveRelations<Idx, 2, Collection, Allocator> _edgeToVertex;
-            FreeList<VertexData, Idx, Collection, Allocator> _vertices;
-            FreeList<EdgeData, Idx, Collection, Allocator> _edges;
-            FreeList<TriangleData, Idx, Collection, Allocator> _triangles;
+            Collection<Vertex, typename Allocator::template StlAllocator<Vertex>> _vertices;
+            Collection<HalfEdge, typename Allocator::template StlAllocator<HalfEdge>> _edges;
         };
     }
 
     enum class TriangleLocation : uint8_t
     {
-        // inside an outline
+        // Inside an outline
         Interior = 1,
 
-        // part of a hole
+        // Part of a hole
         Hole = 2,
 
-        // not part of any outlines or holes, only part of the initial triangulation
+        // Not part of any outlines or holes, only part of the initial triangulation
         ConvexHull = 4,
 
         All = Interior | Hole | ConvexHull
@@ -2499,59 +1935,59 @@ namespace detria
 
     enum class TriangulationError
     {
-        // triangulation was successful
+        // Triangulation was successful
         NoError,
 
-        // the triangulation was created, but no triangulation was performed yet
+        // The triangulation object was created, but no triangulation was performed yet
         TriangulationNotStarted,
 
-        // less than three points were added to the triangulation
+        // Less than three points were added to the triangulation
         LessThanThreePoints,
 
 
-        // errors of the initial triangulation phase
+        // Errors of the initial triangulation phase
 
-        // the input points contained a NaN or infinite value
+        // The input points contained a NaN or infinite value
         NonFinitePositionFound,
 
-        // the list of input points contained duplicates
+        // The list of input points contained duplicates
         DuplicatePointsFound,
 
-        // all of the input points were collinear, so no valid triangles could be created
+        // All of the input points were collinear, so no valid triangles could be created
         AllPointsAreCollinear,
 
 
-        // errors of constrained edge creation
+        // Errors of constrained edge creation
 
-        // a polyline (outline or hole) contained less than 3 points
+        // A polyline (outline or hole) contained less than 3 points
         PolylineTooShort,
 
-        // an index in a polyline was out-of-bounds (idx < 0 or idx >= number of point)
+        // An index in a polyline was out-of-bounds (idx < 0 or idx >= number of point)
         PolylineIndexOutOfBounds,
 
-        // two consecutive points in a polyline were the same
+        // Two consecutive points in a polyline were the same
         PolylineDuplicateConsecutivePoints,
 
-        // an edge was part of both an outline and a hole
+        // An edge was part of both an outline and a hole
         EdgeWithDifferentConstrainedTypes,
 
-        // a point was exactly on a constrained edge
+        // A point was exactly on a constrained edge
         PointOnConstrainedEdge,
 
-        // two constrained edges were intersecting
+        // Two constrained edges were intersecting
         ConstrainedEdgeIntersection,
 
 
-        // errors of triangle classification
+        // Errors of triangle classification
 
-        // found a hole which was not inside any outlines
+        // Found a hole which was not inside any outlines
         HoleNotInsideOutline,
 
-        // an outline was directly inside another outline, or a hole was directly inside another hole
+        // An outline was directly inside another outline, or a hole was directly inside another hole
         StackedPolylines,
 
 
-        // a condition that should always be true was false, this error indicates a bug in the code
+        // A condition that should always be true was false, this error indicates a bug in the code
         AssertionFailed
     };
 
@@ -2578,7 +2014,7 @@ namespace detria
         {
             using Allocator = MyCustomAllocatorType;
 
-            // the rest are used from the default configuration
+            // The rest are used from the default configuration
         }
 
         void doStuff()
@@ -2589,13 +2025,18 @@ namespace detria
 
         */
 
+        // Used for converting between user-defined types. See comment at `DefaultPointAdapter` for more info.
         using PointAdapter = DefaultPointAdapter<Point>;
 
+        // Custom allocator to use for collections.
         using Allocator = memory::DefaultAllocator;
 
+        // Custom collection used during triangulation.
         template <typename T, typename Allocator>
         using Collection = std::vector<T, Allocator>;
 
+        // Robust orientation and incircle tests guarantee correct results, even if the points are nearly collinear or cocircular.
+        // Incircle tests are only used in delaunay triangulations.
         constexpr static bool UseRobustOrientationTests = true;
         constexpr static bool UseRobustIncircleTests = true;
 
@@ -2627,7 +2068,7 @@ namespace detria
         template <typename T>
         using CollectionWithAllocator = Collection<T, typename Allocator::template StlAllocator<T>>;
 
-        using Vector2 = std::invoke_result_t<decltype(PointAdapter::adapt), const Point&>; // can be const reference
+        using Vector2 = std::invoke_result_t<decltype(PointAdapter::adapt), const Point&>; // Can be const reference
 
         using Scalar = decltype(std::decay_t<Vector2>::x);
         static_assert(std::is_same_v<Scalar, decltype(std::decay_t<Vector2>::y)>,
@@ -2640,8 +2081,6 @@ namespace detria
         using Tri = Triangle<Idx>;
         using Edge_ = Edge<Idx>;
 
-        using List = detail::FlatLinkedList<Idx, Idx, Collection, Allocator>;
-
         enum class EdgeType : uint8_t
         {
             NotConstrained = 0, ManuallyConstrained, AutoDetect, Outline, Hole, MAX_EDGE_TYPE
@@ -2649,12 +2088,12 @@ namespace detria
 
         struct EdgeData
         {
-            // an edge can be either:
-            // - not constrained
-            // - manually constrained
-            // - auto detected: will decide if it's an outline or a hole, depending on where it is
-            // - part of an outline or a hole; in this case, we need to store its index
-            // also store if the edge is delaunay
+            // An edge can be either:
+            // - Not constrained
+            // - Manually constrained
+            // - Auto detected: will decide if it's an outline or a hole, depending on where it is
+            // - Part of an outline or a hole; in this case, we need to store its index
+            // Also store if the edge is delaunay and if it's boundary
 
             struct NotConstrainedEdgeTag {};
             struct ManuallyConstrainedEdgeTag {};
@@ -2663,6 +2102,13 @@ namespace detria
             {
                 Idx polylineIndex;
                 EdgeType type;
+            };
+
+            enum class Flags : uint8_t
+            {
+                None = 0,
+                Delaunay = 1,
+                Boundary = 2
             };
 
             inline bool isConstrained() const
@@ -2705,9 +2151,51 @@ namespace detria
                 return result;
             }
 
-            std::variant<NotConstrainedEdgeTag, ManuallyConstrainedEdgeTag, OutlineOrHoleData> data;
-            bool isDelaunay;
+            inline bool hasFlag(Flags flag) const
+            {
+                return Flags(uint8_t(flags) & uint8_t(flag)) != Flags::None;
+            }
+
+            inline void setFlag(Flags flag, bool value)
+            {
+                if (value)
+                {
+                    flags = Flags(uint8_t(flags) | uint8_t(flag));
+                }
+                else
+                {
+                    flags = Flags(uint8_t(flags) & ~uint8_t(flag));
+                }
+            }
+
+            inline bool isDelaunay() const
+            {
+                return hasFlag(Flags::Delaunay);
+            }
+
+            inline void setDelaunay(bool value)
+            {
+                setFlag(Flags::Delaunay, value);
+            }
+
+            inline bool isBoundary() const
+            {
+                return hasFlag(Flags::Boundary);
+            }
+
+            inline void setBoundary(bool value)
+            {
+                setFlag(Flags::Boundary, value);
+            }
+
+            std::variant<NotConstrainedEdgeTag, ManuallyConstrainedEdgeTag, OutlineOrHoleData> data = NotConstrainedEdgeTag{ };
+            Flags flags = Flags::None;
         };
+
+        using Topology = topology::Topology<Idx, detail::Empty, EdgeData, Collection, Allocator>;
+        using TVertex = typename Topology::VertexIndex;
+        using THalfEdge = typename Topology::HalfEdgeIndex;
+        using HalfEdge = typename Topology::HalfEdge;
 
         struct TriangleData
         {
@@ -2715,31 +2203,44 @@ namespace detria
 
             struct KnownLocationData
             {
-                // the index of the inner-most outline or hole that contains this triangle
+                // The index of the inner-most outline or hole that contains this triangle
                 // nullopt if the triangle is outside of all polylines
                 std::optional<Idx> parentPolylineIndex;
             };
 
-            std::variant<UnknownLocationTag, KnownLocationData> data;
+            std::variant<UnknownLocationTag, KnownLocationData> locationData = UnknownLocationTag{ };
+            THalfEdge firstEdge{ };
+        };
+
+        struct TriangleIndex
+        {
+            inline explicit TriangleIndex(Idx index) : index(index)
+            {
+            }
+
+            inline TriangleIndex() : index(Topology::NullIndex)
+            {
+            }
+
+            inline bool operator==(const TriangleIndex&) const = default;
+
+            inline bool isValid() const
+            {
+                return index != Topology::NullIndex;
+            }
+
+            Idx index;
         };
 
         struct PolylineData
         {
             detail::ReadonlySpan<Idx> pointIndices;
-            EdgeType type;
+            EdgeType type{ };
         };
 
-        using TMesh = topology::TopologyMesh<Idx, detail::Empty, EdgeData, TriangleData, Collection, Allocator>;
-        using TVertex = typename TMesh::Vertex;
-        using TEdge = typename TMesh::Edge;
-        using TTriangle = typename TMesh::Triangle;
+        using List = detail::FlatLinkedList<TVertex, Idx, Collection, Allocator>;
 
-        using TVertexCollection = CollectionWithAllocator<TVertex>;
-        using VERelation = typename TMesh::VertexToEdgeRelation;
-        using ETRelation = typename TMesh::EdgeToTriangleRelation;
-        using VTRelation = typename TMesh::VertexToTriangleRelation;
-
-        // triangulation error types
+        // Triangulation error types
 
         struct TE_NoError
         {
@@ -2841,7 +2342,7 @@ namespace detria
 
             std::string getErrorMessage() const
             {
-                // note: we don't really have an index to return, since the outlines and the holes are stored in the same vector
+                // Note: we don't really have an index to return, since the outlines and the holes are stored in the same vector
                 return "An input polyline contained less than three points";
             }
         };
@@ -3009,20 +2510,21 @@ namespace detria
             _polylines(allocator.template createStlAllocator<PolylineData>()),
             _manuallyConstrainedEdges(allocator.template createStlAllocator<Vec2<Idx>>()),
             _autoDetectedPolylineTypes(allocator.template createStlAllocator<EdgeType>()),
-            _topologyMesh(allocator),
+            _topology(allocator),
             _initialTriangulation_SortedPoints(allocator.template createStlAllocator<Idx>()),
             _constrainedEdgeVerticesCW(allocator.template createStlAllocator<TVertex>()),
             _constrainedEdgeVerticesCCW(allocator.template createStlAllocator<TVertex>()),
+            _deletedConstrainedEdges(allocator.template createStlAllocator<THalfEdge>()),
             _constrainedEdgeReTriangulationStack(allocator.template createStlAllocator<TVertex>()),
             _classifyTriangles_CheckedTriangles(allocator.template createStlAllocator<bool>()),
-            _classifyTriangles_TrianglesToCheck(allocator.template createStlAllocator<TTriangle>()),
+            _classifyTriangles_TrianglesToCheck(allocator.template createStlAllocator<TriangleIndex>()),
             _convexHullPoints(allocator),
             _parentPolylines(allocator.template createStlAllocator<std::optional<Idx>>()),
             _delaunayCheckStack(allocator.template createStlAllocator<Edge_>())
         {
         }
 
-        // if the triangulation failed, this function returns the type of the error that occured
+        // If the triangulation failed, this function returns the type of the error that occured
         TriangulationError getError() const
         {
             TriangulationError err{ };
@@ -3033,7 +2535,7 @@ namespace detria
             return err;
         }
 
-        // returns a human-readable message about the last triangulation error (if any)
+        // Returns a human-readable message about the last triangulation error (if any)
         std::string getErrorMessage() const
         {
             std::string msg;
@@ -3044,7 +2546,7 @@ namespace detria
             return msg;
         }
 
-        // clears all data of the triangulation, allowing the triangulation object to be reused
+        // Clears all data of the triangulation, allowing the triangulation object to be reused
         void clear()
         {
             _points.reset();
@@ -3054,12 +2556,12 @@ namespace detria
             clearInternalData();
         }
 
-        // set all points which will be used for the triangulation
-        // the points are not copied, so they must be valid for the duration of the triangulation
-        // the result triangles will be indices of these points
-        // if a point should be part of an outline, then use `addOutline`
-        // if a point should be part of a hole, then use `addHole`
-        // the rest of the points will be steiner points
+        // Set all points which will be used for the triangulation
+        // The points are not copied, so they must be valid for the duration of the triangulation
+        // The result triangles will be indices of these points
+        // If a point should be part of an outline, then use `addOutline`
+        // If a point should be part of a hole, then use `addHole`
+        // The rest of the points will be steiner points
         void setPoints(detail::ReadonlySpan<Point> points)
         {
             _points = points;
@@ -3068,7 +2570,7 @@ namespace detria
         // `addOutline`, `addHole`, and `addPolylineAutoDetectType` return the polyline's index,
         // which can be used to get its parent, using `getParentPolylineIndex`
 
-        // add an outline - regions surrounded by outlines are "solid", and will be part of the "inside" triangles
+        // Add an outline - regions surrounded by outlines are "solid", and will be part of the "inside" triangles
         Idx addOutline(detail::ReadonlySpan<Idx> outline)
         {
             Idx id = Idx(_polylines.size());
@@ -3082,7 +2584,7 @@ namespace detria
             return id;
         }
 
-        // add a hole - holes will be subtracted from the final "solid", and will be part of the "outside" triangles
+        // Add a hole - holes will be subtracted from the final "solid", and will be part of the "outside" triangles
         Idx addHole(detail::ReadonlySpan<Idx> hole)
         {
             Idx id = Idx(_polylines.size());
@@ -3096,7 +2598,7 @@ namespace detria
             return id;
         }
 
-        // add a polyline, and automatically decide if it's an outline or a hole
+        // Add a polyline, and automatically decide if it's an outline or a hole
         Idx addPolylineAutoDetectType(detail::ReadonlySpan<Idx> polyline)
         {
             Idx id = Idx(_polylines.size());
@@ -3110,14 +2612,14 @@ namespace detria
             return id;
         }
 
-        // set a single constrained edge, which will be part of the final triangulation
+        // Set a single constrained edge, which will be part of the final triangulation
         void setConstrainedEdge(const Idx& idxA, const Idx& idxB)
         {
             _manuallyConstrainedEdges.push_back({ .x = idxA, .y = idxB });
         }
 
-        // perform the triangulation
-        // returns true if the triangulation succeeded, false otherwise
+        // Perform the triangulation
+        // Returns true if the triangulation succeeded, false otherwise
         [[nodiscard]]
         bool triangulate(bool delaunay)
         {
@@ -3125,7 +2627,7 @@ namespace detria
 
             if constexpr (collectionHasReserve)
             {
-                // guess capacity, 64 should be a good starting point
+                // Guess capacity, 64 should be a good starting point
                 constexpr Idx initialCapacity = 64;
                 _constrainedEdgeVerticesCW.reserve(initialCapacity);
                 _constrainedEdgeVerticesCCW.reserve(initialCapacity);
@@ -3139,9 +2641,10 @@ namespace detria
 
             if (!triangulateInternal(delaunay))
             {
-                // if failed, then clear topology mesh and convex hull points, so no invalid triangulation is returned
-                _topologyMesh.clear();
+                // If failed, then clear topology and convex hull points, so no invalid triangulation is returned
+                _topology.clear();
                 _convexHullPoints.clear();
+                _resultTriangles.clear();
                 return false;
             }
 
@@ -3149,56 +2652,56 @@ namespace detria
             return true;
         }
 
-        // iterate over every interior triangle of the triangulation
+        // Iterate over every interior triangle of the triangulation
         void forEachTriangle(auto&& callback, bool cwTriangles = true) const
         {
-            forEachTriangleInternal(callback, cwTriangles, [&](const TTriangle& tri)
+            forEachTriangleInternal(callback, cwTriangles, [&](size_t triIndex)
             {
-                return getTriangleLocation(tri) == TriangleLocation::Interior;
+                return getTriangleLocation(triIndex) == TriangleLocation::Interior;
             });
         }
 
-        // iterate over every hole triangle of the triangulation
+        // Iterate over every hole triangle of the triangulation
         void forEachHoleTriangle(auto&& callback, bool cwTriangles = true) const
         {
-            forEachTriangleInternal(callback, cwTriangles, [&](const TTriangle& tri)
+            forEachTriangleInternal(callback, cwTriangles, [&](size_t triIndex)
             {
-                return getTriangleLocation(tri) == TriangleLocation::Hole;
+                return getTriangleLocation(triIndex) == TriangleLocation::Hole;
             });
         }
 
-        // iterate over every single triangle of the triangulation, even convex hull triangles
+        // Iterate over every single triangle of the triangulation, even convex hull triangles
         void forEachTriangleOfEveryLocation(auto&& callback, bool cwTriangles = true) const
         {
-            forEachTriangleInternal(callback, cwTriangles, [](const TTriangle&) { return true; });
+            forEachTriangleInternal(callback, cwTriangles, [](const TriangleIndex&) { return true; });
         }
 
-        // iterate over every triangle of a given location
-        // locations can be combined, to iterate over e.g. both interior and hole triangles
+        // Iterate over every triangle of a given location
+        // Locations can be combined, to iterate over e.g. both interior and hole triangles
         void forEachTriangleOfLocation(auto&& callback, const TriangleLocation& locationMask, bool cwTriangles = true) const
         {
             uint8_t mask = static_cast<uint8_t>(locationMask);
 
-            _topologyMesh.forEachTriangle([&](const TTriangle& tri)
+            for (size_t i = 0; i < _resultTriangles.size(); ++i)
             {
-                TriangleLocation location = getTriangleLocation(tri);
+                TriangleLocation location = getTriangleLocation(i);
                 bool shouldProcess = (uint8_t(location) & mask) != 0;
                 if (shouldProcess)
                 {
                     if (cwTriangles)
                     {
-                        callback(getTriangleOriginalIndices<false>(tri), location);
+                        callback(getTriangleOriginalIndices<false>(i), location);
                     }
                     else
                     {
-                        callback(getTriangleOriginalIndices<true>(tri), location);
+                        callback(getTriangleOriginalIndices<true>(i), location);
                     }
                 }
-            });
+            }
         }
 
-        // iterate over the vertices (vertex indices) in the convex hull
-        // the vertices are in clockwise order
+        // Iterate over the vertices (vertex indices) in the convex hull
+        // The vertices are in clockwise order
         void forEachConvexHullVertex(auto&& callback)
         {
             if (_convexHullPoints.size() == 0 || _convexHullStartIndex == Idx(-1))
@@ -3210,13 +2713,14 @@ namespace detria
             do
             {
                 const typename List::Node& currentNode = _convexHullPoints.getNode(nodeId);
-                callback(currentNode.data);
+                callback(currentNode.data.index);
                 nodeId = currentNode.nextId;
-            } while (nodeId != _convexHullStartIndex);
+            }
+            while (nodeId != _convexHullStartIndex);
         }
 
-        // returns the index of the parent of this polyline (the parent directly contains this polyline)
-        // returns nullopt for top-level outlines without parent (and for out-of-range index)
+        // Returns the index of the parent of this polyline (the parent directly contains this polyline)
+        // Returns nullopt for top-level outlines without parent (and for out-of-range index)
         std::optional<Idx> getParentPolylineIndex(Idx polylineIndex)
         {
             if (polylineIndex >= 0 && size_t(polylineIndex) < _parentPolylines.size())
@@ -3236,10 +2740,13 @@ namespace detria
 
         void clearInternalData()
         {
-            _topologyMesh.clear();
+            _topology.clear();
+            _resultTriangles.clear();
+            _triangleData.clear();
             _initialTriangulation_SortedPoints.clear();
             _constrainedEdgeVerticesCW.clear();
             _constrainedEdgeVerticesCCW.clear();
+            _deletedConstrainedEdges.clear();
             _constrainedEdgeReTriangulationStack.clear();
             _classifyTriangles_CheckedTriangles.clear();
             _classifyTriangles_TrianglesToCheck.clear();
@@ -3257,15 +2764,15 @@ namespace detria
 
         bool triangulateInternal(bool delaunay)
         {
-            if (_points.size() < 3)
+            if (_points.size() < 3) DETRIA_UNLIKELY
             {
-                // need at least 3 points to triangulate
+                // Need at least 3 points to triangulate
                 return fail(TE_LessThanThreePoints{ });
             }
 
             if constexpr (Config::NaNChecks)
             {
-                // check NaN / inf values
+                // Check NaN / inf values
                 for (size_t i = 0; i < _points.size(); ++i)
                 {
                     Vector2 p = adapt(_points[i]);
@@ -3280,34 +2787,42 @@ namespace detria
                 }
             }
 
-            // reserve topology mesh capacity
-            _topologyMesh.reserveVertices(Idx(_points.size()));
-            _topologyMesh.reserveTriangles(Idx(_points.size() * 2)); // guess number of triangles
-            _topologyMesh.reserveEdges(Idx(_points.size() * 3)); // number of edges should be around number of vertices + number of triangles
+            // Reserve topology capacity
+            _topology.reserveVertices(_points.size());
+            size_t numTriangles = _points.size() * 2; // Guess number of triangles
 
-            // only create the vertices for now
+            // Number of edges should be around number of vertices + number of triangles
+            _topology.reserveHalfEdges((_points.size() + numTriangles) * 2);
+
+            if constexpr (collectionHasReserve)
+            {
+                _resultTriangles.reserve(numTriangles);
+            }
+
+            // Only create the vertices for now
             for (size_t i = 0; i < _points.size(); ++i)
             {
-                _topologyMesh.createVertex();
+                _topology.createVertex();
             }
 
             TVertex convexHullVertex0{ };
             TVertex convexHullVertex1{ };
 
-            // initial triangulation, will add the triangles
+            // Initial triangulation, will add the edges
             DETRIA_CHECK(createInitialTriangulation(delaunay, convexHullVertex0, convexHullVertex1));
 
+            // Add constrained edges, which ensures that all required vertices have edges between them
             DETRIA_CHECK(createConstrainedEdges(delaunay));
 
-            // go through all triangles, and decide if they are inside or outside
-            DETRIA_CHECK(classifyTriangles(_topologyMesh.getEdgeBetweenVertices(convexHullVertex0, convexHullVertex1)));
-
+            // Go through all triangles, and decide if they are inside or outside
+            DETRIA_CHECK(classifyTriangles(_topology.getEdgeBetween(convexHullVertex0, convexHullVertex1)));
+            
             return true;
         }
 
         bool createInitialTriangulation(bool delaunay, TVertex& convexHullVertex0, TVertex& convexHullVertex1)
         {
-            // initialize point data
+            // Initialize point data
             CollectionWithAllocator<Idx>& sortedPoints = _initialTriangulation_SortedPoints;
             sortedPoints.resize(_points.size());
             for (size_t i = 0; i < _points.size(); ++i)
@@ -3315,10 +2830,10 @@ namespace detria
                 sortedPoints[i] = Idx(i);
             }
 
-            // initial triangulation - just a valid triangulation that includes all points
+            // Initial triangulation - just a valid triangulation that includes all points
 
-            // sort all points by x coordinates; for points with the same x coordinate, sort by y
-            // if there are two points (or more) that have the same x and y coordinate, then we can't triangulate it,
+            // Sort all points by x coordinates; for points with the same x coordinate, sort by y
+            // If there are two points (or more) that have the same x and y coordinate, then we can't triangulate it,
             // because it would create degenerate triangles
 
             bool hasDuplicatePoints = false;
@@ -3341,8 +2856,8 @@ namespace detria
                     }
                     else
                     {
-                        // for some reason, when using emscripten, std::sort sometimes compares the same value with itself
-                        // so in that case, don't fail, just return false
+                        // For some reason, when using emscripten, std::sort sometimes compares the same value with itself
+                        // So in that case, don't fail, just return false
 
                         if (idxA != idxB)
                         {
@@ -3370,16 +2885,16 @@ namespace detria
                 });
             }
 
-            // find an initial triangle
-            // since we have no duplicate points, we can always use the first two points as the triangle's points
-            // for the third point, we need to find one so that the first three points are not collinear
+            // Find an initial triangle
+            // Since we have no duplicate points, we can always use the first two points as the triangle's points
+            // For the third point, we need to find one so that the first three points are not collinear
 
             const Idx& p0Idx = sortedPoints[0];
             const Idx& p1Idx = sortedPoints[1];
             Vector2 p0Position = adapt(_points[size_t(p0Idx)]);
             Vector2 p1Position = adapt(_points[size_t(p1Idx)]);
 
-            size_t firstNonCollinearIndex = 0; // index to the list of sorted points, not the original points
+            size_t firstNonCollinearIndex = 0; // Index to the list of sorted points, not the original points
             math::Orientation triangleOrientation = math::Orientation::Collinear;
             for (size_t i = 2; i < sortedPoints.size(); ++i)
             {
@@ -3396,50 +2911,99 @@ namespace detria
 
             if (triangleOrientation == math::Orientation::Collinear)
             {
-                // all points are collinear, and cannot be triangulated
+                // All points are collinear, and cannot be triangulated
                 return fail(TE_AllPointsAreCollinear{ });
             }
 
             const Idx& p2Idx = sortedPoints[firstNonCollinearIndex];
 
-            // we have a triangle now, so start adding the remaining points to the triangulation
-            // also keep track of the convex hull
+            // We have a triangle now, so start adding the remaining points to the triangulation
+            // Also keep track of the convex hull
 
             using ListNode = typename List::Node;
 
-            TVertex v0(p0Idx);
-            TVertex v1(p1Idx);
+            // Make sure that the triangles are clockwise
+
+            TVertex v0{ };
+            TVertex v1{ };
             TVertex v2(p2Idx);
 
-            // make sure that the triangles are clockwise
-            TTriangle firstTriangle{ };
             if (triangleOrientation == math::Orientation::CW)
             {
-                // already cw, don't flip
-                firstTriangle = _topologyMesh.createTriangle(v0, v1, v2);
+                v0 = TVertex(p0Idx);
+                v1 = TVertex(p1Idx);
             }
             else
             {
-                // ccw, flip to cw
-                firstTriangle = _topologyMesh.createTriangle(v1, v0, v2);
+                v0 = TVertex(p1Idx);
+                v1 = TVertex(p0Idx);
             }
 
-            Idx vertexIndex0 = _topologyMesh.getVertexOfTriangle(firstTriangle, 0).index;
-            Idx vertexIndex1 = _topologyMesh.getVertexOfTriangle(firstTriangle, 1).index;
-            Idx vertexIndex2 = _topologyMesh.getVertexOfTriangle(firstTriangle, 2).index;
-
-            if (delaunay)
+            // Create initial half-edges
             {
-                for (Idx i = 0; i < 3; ++i)
+                //        v0
+                //        *
+                //
+                //
+                //
+                // v2 *       * v1
+
+                THalfEdge e01 = _topology.createNewEdge(v0, v1, { }, { });
+                THalfEdge e10 = _topology.getOpposite(e01);
+
+                //        v0
+                //        *
+                //         \ e01
+                // 
+                //           \ e10
+                // v2 *       * v1
+
+                THalfEdge e02 = _topology.createNewEdge(v0, v2, e01, { });
+                THalfEdge e20 = _topology.getOpposite(e02);
+
+                //        v0
+                //        *
+                //   e02 / \ e01
+                // 
+                // e20 /     \ e10
+                // v2 *       * v1
+
+                THalfEdge e12 = _topology.createNewEdge(v1, v2, e10, e20);
+                THalfEdge e21 = _topology.getOpposite(e12);
+
+                //        v0
+                //        *
+                //   e02 / \ e01
+                // 
+                // e20 /     \ e10
+                // v2 *--- ---* v1
+                //     e21 e12
+
+                if (delaunay)
                 {
-                    _topologyMesh.getEdgeData(_topologyMesh.getEdgeOfTriangle(firstTriangle, i))->isDelaunay = true;
+                    // Mark initial edges as delaunay
+                    // Mark outer part of half-edges as boundary
+
+                    auto markEdge = [&](THalfEdge edge, bool isBoundary)
+                    {
+                        EdgeData& edgeData = _topology.getEdgeData(edge);
+                        edgeData.setDelaunay(true);
+                        edgeData.setBoundary(isBoundary);
+                    };
+
+                    markEdge(e01, false);
+                    markEdge(e10, true);
+                    markEdge(e02, true);
+                    markEdge(e20, false);
+                    markEdge(e12, false);
+                    markEdge(e21, true);
                 }
             }
 
-            // add indices to convex hull
-            Idx firstPointId = _convexHullPoints.create(vertexIndex0);
-            Idx secondPointId = _convexHullPoints.addAfter(firstPointId, vertexIndex1);
-            Idx lastPointId = _convexHullPoints.addAfter(secondPointId, vertexIndex2);
+            // Add indices to convex hull
+            Idx firstPointId = _convexHullPoints.create(v0);
+            Idx secondPointId = _convexHullPoints.addAfter(firstPointId, v1);
+            Idx lastPointId = _convexHullPoints.addAfter(secondPointId, v2);
 
             auto addPoint = [&](size_t sortedPointIdx)
             {
@@ -3448,28 +3012,28 @@ namespace detria
 
                 auto isEdgeVisible = [&](const Idx& nodeId)
                 {
-                    // decide if the edge (which is given by the current and the next vertex) is visible from the current point
+                    // Decide if the edge (which is given by the current and the next vertex) is visible from the current point
 
                     const ListNode& node = _convexHullPoints.getNode(nodeId);
                     const ListNode& next = _convexHullPoints.getNode(node.nextId);
 
                     math::Orientation orientation = orient2d(
-                        adapt(_points[size_t(node.data)]),
-                        adapt(_points[size_t(next.data)]),
+                        adapt(_points[size_t(node.data.index)]),
+                        adapt(_points[size_t(next.data.index)]),
                         position
                     );
 
-                    // don't consider point as visible if exactly on the line
+                    // Don't consider point as visible if exactly on the line
                     return orientation == math::Orientation::CCW;
                 };
 
-                // start checking edges, and find the first and last one that is visible from the current point
+                // Start checking edges, and find the first and last one that is visible from the current point
                 // `lastPointId` is guaranteed to be visible, so it's a good starting point
 
                 Idx lastVisibleForwards = lastPointId;
                 Idx lastVisibleBackwards = _convexHullPoints.getNode(lastPointId).prevId;
 
-                // check forwards
+                // Check forwards
                 while (true)
                 {
                     if (isEdgeVisible(lastVisibleForwards))
@@ -3482,7 +3046,7 @@ namespace detria
                     }
                 }
 
-                // check backwards
+                // Check backwards
                 while (true)
                 {
                     if (isEdgeVisible(lastVisibleBackwards))
@@ -3500,35 +3064,54 @@ namespace detria
 
                 TVertex pVertex(originalIndex);
 
-                // add new triangles
-                // if delaunay, then add edges (that we are about to remove) to the list of edges to check
+                // Add new edges
+                // If delaunay, then add edges that we are about to remove to the list of edges to check
                 Idx current = lastVisibleBackwards;
-                TEdge lastAddedEdge{ };
+                THalfEdge lastAddedEdge{ };
 
                 while (current != lastVisibleForwards)
                 {
                     const ListNode& currentNode = _convexHullPoints.getNode(current);
 
-                    TVertex currentVertex(currentNode.data);
-                    TVertex nextVertex(_convexHullPoints.getNode(currentNode.nextId).data);
+                    TVertex currentVertex = currentNode.data;
+                    TVertex nextVertex = _convexHullPoints.getNode(currentNode.nextId).data;
 
-                    TEdge edge0 = _topologyMesh.getEdgeBetweenVertices(nextVertex, currentVertex);
-                    TEdge edge1 = lastAddedEdge.valid() ? lastAddedEdge : _topologyMesh.createEdge(currentVertex, pVertex);
-                    TEdge edge2 = _topologyMesh.createEdge(pVertex, nextVertex);
+                    THalfEdge edge0i = _topology.getEdgeBetween(currentVertex, nextVertex);
+                    HalfEdge& edge0 = _topology.getEdge(edge0i);
 
-                    lastAddedEdge = edge2;
-                    TTriangle newTriangle = _topologyMesh.createTriangle(pVertex, nextVertex, currentVertex, edge0, edge1, edge2);
+                    THalfEdge edge1i = lastAddedEdge.isValid()
+                        ? lastAddedEdge
+                        : _topology.createNewEdge(pVertex, currentVertex, { }, edge0.prevEdge);
+                    HalfEdge& edge1 = _topology.getEdge(edge1i);
+
+                    THalfEdge edge2i = _topology.createNewEdge(pVertex, nextVertex, edge1.prevEdge, edge0.opposite);
+
+                    // Update boundary status
+                    _topology.getEdgeData(edge0.opposite).setBoundary(false); // Previously boundary edge, but it became interior now
+
+                    if (!lastAddedEdge.isValid())
+                    {
+                        // Mark first edge of the newly added vertex as boundary
+                        edge1.data.setBoundary(true);
+                    }
+
+                    lastAddedEdge = edge2i;
 
                     if (delaunay)
                     {
-                        // make sure the newly added triangle meets the delaunay criteria
-                        DETRIA_CHECK(delaunayEdgeFlip(pVertex, _topologyMesh.getEdgeOfTriangle(newTriangle, 0)));
+                        // Make sure the newly added triangle meets the delaunay criteria
+                        DETRIA_CHECK(delaunayEdgeFlip(pVertex, edge0i));
                     }
 
                     current = currentNode.nextId;
                 }
 
-                // remove vertices from convex hull if needed
+                // Finally, mark lastAddedEdge as boundary
+                {
+                    _topology.getEdgeData(_topology.getOpposite(lastAddedEdge)).setBoundary(true);
+                }
+
+                // Remove vertices from convex hull if needed
                 current = _convexHullPoints.getNode(lastVisibleBackwards).nextId;
                 while (current != lastVisibleForwards)
                 {
@@ -3537,15 +3120,15 @@ namespace detria
                     current = next;
                 }
 
-                // add new vertex to convex hull
-                lastPointId = _convexHullPoints.addAfter(lastVisibleBackwards, pVertex.index);
+                // Add new vertex to convex hull
+                lastPointId = _convexHullPoints.addAfter(lastVisibleBackwards, pVertex);
 
                 return true;
             };
 
             Idx rightMostConvexHullPointAtStart = lastPointId;
 
-            // add points up to `firstNonCollinearIndex`
+            // Add points up to `firstNonCollinearIndex`
             for (size_t i = 2; i < firstNonCollinearIndex; ++i)
             {
                 DETRIA_CHECK(addPoint(i));
@@ -3553,12 +3136,12 @@ namespace detria
 
             if (firstNonCollinearIndex != 2)
             {
-                // if the first three (or more) points were collinear, then `lastPointId` might not be the right-most point
-                // so make sure that it is the right-most
+                // If the first three (or more) points were collinear, then `lastPointId` might not be the right-most point
+                // So make sure that it is the right-most
 
                 auto getXCoord = [&](const Idx& id)
                 {
-                    return adapt(_points[size_t(_convexHullPoints.getNode(id).data)]).x;
+                    return adapt(_points[size_t(_convexHullPoints.getNode(id).data.index)]).x;
                 };
 
                 if (getXCoord(lastPointId) < getXCoord(rightMostConvexHullPointAtStart))
@@ -3567,100 +3150,93 @@ namespace detria
                 }
             }
 
-            // skip `firstNonCollinearIndex`, add the rest of the points
+            // Skip `firstNonCollinearIndex`, add the rest of the points
             for (size_t i = firstNonCollinearIndex + 1; i < sortedPoints.size(); ++i)
             {
                 DETRIA_CHECK(addPoint(i));
             }
 
-            // store an edge of the outline for later
-            // also, don't store the edge, because it's possible that an edge is deleted and recreated with a different id later
-            // storing two vertices guarantees that the edge will be valid later too
+            // Store an edge of the outline for later
+            // Also, don't store the edge, because it's possible that an edge is deleted and recreated with a different id later
+            // Storing two vertices guarantees that the edge will be valid later too
             _convexHullStartIndex = lastPointId;
             const ListNode& firstConvexHullNode = _convexHullPoints.getNode(_convexHullStartIndex);
             const ListNode& secondConvexHullNode = _convexHullPoints.getNode(firstConvexHullNode.nextId);
-            convexHullVertex0 = TVertex(firstConvexHullNode.data);
-            convexHullVertex1 = TVertex(secondConvexHullNode.data);
+            convexHullVertex0 = firstConvexHullNode.data;
+            convexHullVertex1 = secondConvexHullNode.data;
 
             return true;
         }
 
-        // use `_delaunayCheckStack` in this function
-        // it will always be empty when this function returns
-        bool delaunayEdgeFlip(const TVertex& justAddedVertex, const TEdge& oppositeEdge)
+        // Use `_delaunayCheckStack` in this function
+        // It will always be empty when this function returns
+        bool delaunayEdgeFlip(const TVertex& justAddedVertex, const THalfEdge& oppositeEdge)
         {
-            auto addEdgeToCheck = [&](const TEdge& edge)
+            auto addEdgeToCheck = [&](THalfEdge e)
             {
-                _topologyMesh.getEdgeData(edge)->isDelaunay = false;
+                HalfEdge& edge = _topology.getEdge(e);
+                HalfEdge& opposite = _topology.getEdge(edge.opposite);
+
+                edge.data.setDelaunay(false);
+                opposite.data.setDelaunay(false);
+
                 _delaunayCheckStack.emplace_back(TopologyEdgeWithVertices
                 {
-                    .v0 = _topologyMesh.getVertexOfEdge(edge, 0),
-                    .v1 = _topologyMesh.getVertexOfEdge(edge, 1),
-                    .edge = edge
+                    .v0 = edge.vertex,
+                    .v1 = opposite.vertex,
+                    .edge = e
                 });
             };
 
             addEdgeToCheck(oppositeEdge);
 
-            // flip edges
+            // Flip edges
             while (!_delaunayCheckStack.empty())
             {
                 TopologyEdgeWithVertices edgeWithVertices = _delaunayCheckStack.back();
                 _delaunayCheckStack.pop_back();
 
-                TEdge edge01{ };
-                // check if the edge still has the same vertices
-                if (_topologyMesh.getVertexOfEdge(edgeWithVertices.edge, 0).index == edgeWithVertices.v0.index &&
-                    _topologyMesh.getVertexOfEdge(edgeWithVertices.edge, 1).index == edgeWithVertices.v1.index) DETRIA_LIKELY
+                THalfEdge e01 = edgeWithVertices.edge;
+                HalfEdge& edge01 = _topology.getEdge(e01);
+                HalfEdge& edge10 = _topology.getEdge(edge01.opposite);
+
+                // Check if the edge still has the same vertices
+                if (edge01.vertex != edgeWithVertices.v0 || edge10.vertex != edgeWithVertices.v1) DETRIA_UNLIKELY
                 {
-                    // edge still exists
-                    edge01 = edgeWithVertices.edge;
-                }
-                else
-                {
-                    // edge was flipped
+                    // Edge was flipped
                     continue;
                 }
 
-                EdgeData* edgeData = _topologyMesh.getEdgeData(edge01);
-                DETRIA_ASSERT(edgeData != nullptr);
-                if (edgeData->isDelaunay || edgeData->isConstrained())
+                EdgeData& edgeData = edge01.data;
+                EdgeData& oppositeEdgeData = edge10.data;
+                if (edgeData.isDelaunay() || edgeData.isConstrained() || oppositeEdgeData.isDelaunay() || oppositeEdgeData.isConstrained())
                 {
-                    // don't flip edges that are already delaunay or constrained
+                    // Don't flip edges that are already delaunay or constrained
                     continue;
                 }
 
-                // get first and second triangle of the edge
-                // it's possible that we only have one triangle
-
-                ETRelation relation0 = _topologyMesh.getFirstTriangleOfEdge(edge01);
-                DETRIA_ASSERT(relation0.valid()); // must have at least one triangle
-
-                ETRelation relation1 = _topologyMesh.getNext(relation0);
-                if (!relation1.valid())
+                if (edgeData.isBoundary() || oppositeEdgeData.isBoundary())
                 {
-                    // no triangle on the other side, so definitely cannot flip
-                    edgeData->isDelaunay = true;
+                    // Also don't flip boundary edges
+                    edgeData.setDelaunay(true);
+                    oppositeEdgeData.setDelaunay(true);
                     continue;
                 }
 
-                DETRIA_DEBUG_ASSERT(!_topologyMesh.getNext(relation1).valid()); // there should be no more than two triangles
+                TVertex vertex0 = edge01.vertex;
+                TVertex vertex1 = edge10.vertex;
+                TVertex otherVertex0 = _topology.getEdge(_topology.getOpposite(edge01.nextEdge)).vertex;
+                TVertex otherVertex1 = _topology.getEdge(_topology.getOpposite(edge10.nextEdge)).vertex;
 
-                TTriangle tri0 = relation0.triangle();
-                TTriangle tri1 = relation1.triangle();
-
-                Idx indexOfEdgeInTri0 = relation0.indexInTriangle();
-                Idx indexOfEdgeInTri1 = relation1.indexInTriangle();
-
-                // get original vertices again, so that they are in the correct orientation
-                TVertex vertex0 = _topologyMesh.getVertexOfTriangle(tri0, topology::next3(indexOfEdgeInTri0));
-                TVertex vertex1 = _topologyMesh.getVertexOfTriangle(tri0, topology::prev3(indexOfEdgeInTri0));
-
-                TVertex otherVertex0 = _topologyMesh.getVertexOfTriangle(tri0, indexOfEdgeInTri0);
-                TVertex otherVertex1 = _topologyMesh.getVertexOfTriangle(tri1, indexOfEdgeInTri1);
+                if (otherVertex0 == otherVertex1) DETRIA_UNLIKELY
+                {
+                    // This can happen during re-triangulation around a constrained edge
+                    // This just means that the edge is boundary, so skip it
+                    continue;
+                }
 
                 /*
-                
+
          vertex0     otherVertex1
                 *---*
                 |\  |
@@ -3668,68 +3244,47 @@ namespace detria
                 |  \|
                 *---*
     otherVertex0     vertex1
-                
+
                 */
 
-                // points of the current edge
+                // Points of the current edge
                 Vector2 vertex0Position = adapt(_points[size_t(vertex0.index)]);
                 Vector2 vertex1Position = adapt(_points[size_t(vertex1.index)]);
 
-                // points of the edge that we'd get if a flip is needed
+                // Points of the edge that we'd get if a flip is needed
                 Vector2 otherVertex0Position = adapt(_points[size_t(otherVertex0.index)]);
                 Vector2 otherVertex1Position = adapt(_points[size_t(otherVertex1.index)]);
 
                 // TODO?: maybe we could allow user-defined functions to decide if an edge should be flipped
-                // that would enable other metrics, e.g. minimize edge length, flip based on the aspect ratio of the triangles, etc.
+                // That would enable other metrics, e.g. minimize edge length, flip based on the aspect ratio of the triangles, etc.
                 // https://people.eecs.berkeley.edu/~jrs/papers/elemj.pdf
-                // but we'd need to make sure that every edge is only processed once
+                // But we'd need to make sure that every edge is only processed once
 
                 math::CircleLocation loc = incircle(vertex0Position, vertex1Position, otherVertex1Position, otherVertex0Position);
                 if (loc == math::CircleLocation::Inside)
                 {
-                    // flip edge
-                    // note that the edge is always flippable if we get here, no need to do orientation checks
+                    // Flip edge
+                    // The edge is always flippable if we get here, no need to do orientation checks
 
-                    Idx indexOfPrevEdgeInTri0 = topology::prev3(indexOfEdgeInTri0);
-                    Idx indexOfPrevEdgeInTri1 = topology::prev3(indexOfEdgeInTri1);
-                    Idx indexOfNextEdgeInTri0 = topology::next3(indexOfEdgeInTri0);
-                    Idx indexOfNextEdgeInTri1 = topology::next3(indexOfEdgeInTri1);
+                    _topology.flipEdge(e01);
 
-                    TEdge edge0 = _topologyMesh.getEdgeOfTriangle(tri0, indexOfPrevEdgeInTri0);
-                    TEdge edge1 = _topologyMesh.getEdgeOfTriangle(tri0, indexOfNextEdgeInTri0);
-                    TEdge edge2 = _topologyMesh.getEdgeOfTriangle(tri1, indexOfPrevEdgeInTri1);
-                    TEdge edge3 = _topologyMesh.getEdgeOfTriangle(tri1, indexOfNextEdgeInTri1);
-
-                    // update relations
-                    // edge vertices
-                    _topologyMesh.replaceVertexOfEdge(VERelation(edge01, 1), otherVertex0);
-                    _topologyMesh.replaceVertexOfEdge(VERelation(edge01, 0), otherVertex1);
-
-                    // triangle0
-                    _topologyMesh.replaceVertexOfTriangle(VTRelation(tri0, indexOfPrevEdgeInTri0), otherVertex1);
-                    _topologyMesh.replaceEdgeOfTriangle(ETRelation(tri0, indexOfEdgeInTri0), edge3);
-                    _topologyMesh.replaceEdgeOfTriangle(ETRelation(tri0, indexOfNextEdgeInTri0), edge01);
-
-                    // triangle1
-                    _topologyMesh.replaceVertexOfTriangle(VTRelation(tri1, indexOfPrevEdgeInTri1), otherVertex0);
-                    _topologyMesh.replaceEdgeOfTriangle(ETRelation(tri1, indexOfEdgeInTri1), edge1);
-                    _topologyMesh.replaceEdgeOfTriangle(ETRelation(tri1, indexOfNextEdgeInTri1), edge01);
-
-                    // only check edges which can be non-delaunay
+                    // Flipping an edge might require other edges to be flipped too
+                    // Only check edges which can be non-delaunay
                     if (justAddedVertex.index == otherVertex0.index)
                     {
-                        addEdgeToCheck(edge2);
-                        addEdgeToCheck(edge3);
+                        addEdgeToCheck(edge01.prevEdge);
+                        addEdgeToCheck(edge01.nextEdge);
                     }
                     else
                     {
                         DETRIA_DEBUG_ASSERT(justAddedVertex.index == otherVertex1.index);
-                        addEdgeToCheck(edge0);
-                        addEdgeToCheck(edge1);
+                        addEdgeToCheck(edge10.nextEdge);
+                        addEdgeToCheck(edge10.prevEdge);
                     }
                 }
 
-                edgeData->isDelaunay = true;
+                edgeData.setDelaunay(true);
+                oppositeEdgeData.setDelaunay(true);
             }
 
             return true;
@@ -3737,7 +3292,7 @@ namespace detria
 
         bool createConstrainedEdges(bool delaunay)
         {
-            // ensure that an edge exists between each consecutive vertex for all outlines and holes
+            // Ensure that an edge exists between each consecutive vertex for all outlines and holes
 
             for (size_t i = 0; i < _polylines.size(); ++i)
             {
@@ -3754,7 +3309,7 @@ namespace detria
                 Idx prevVertexIdx{ };
                 size_t startingIndex{ };
 
-                // we allow polylines to have the same start and end vertex, e.g. [0, 1, 2, 3, 0]
+                // We allow polylines to have the same start and end vertex, e.g. [0, 1, 2, 3, 0]
 
                 if (polyline.front() == polyline.back())
                 {
@@ -3828,75 +3383,72 @@ namespace detria
             TVertex v0(idxA);
             TVertex v1(idxB);
 
-            TEdge currentEdge = _topologyMesh.getEdgeBetweenVertices(v0, v1);
-            if (currentEdge.valid())
+            THalfEdge currentEdgeIndex = _topology.getEdgeBetween(v0, v1);
+            if (currentEdgeIndex.isValid())
             {
-                // there is already an edge between the vertices, which may or may not be constrained already
-                // we have priorities to decide which edge types are overwritten by other types
-                // if an edge is not yet constrained, then always overwrite it
-                // if an edge is manually constrained, then only overwrite it if the new type is auto-detect, outline, or hole
-                // if an edge is auto-detect, then only overwrite it with outline or hole
-                // if an edge is already an outline or hole, then check if the new type is the same
-                // if they are different, then it's an error
+                // There is already an edge between the vertices, which may or may not be constrained already
+                // We have priorities to decide which edge types are overwritten by other types
+                // If an edge is not yet constrained, then always overwrite it
+                // If an edge is manually constrained, then only overwrite it if the new type is auto-detect, outline, or hole
+                // If an edge is auto-detect, then only overwrite it with outline or hole
+                // If an edge is already an outline or hole, then check if the new type is the same
+                // If they are different, then it's an error
 
-                if (EdgeData* currentEdgeData = _topologyMesh.getEdgeData(currentEdge)) DETRIA_LIKELY
+                HalfEdge& currentEdge = _topology.getEdge(currentEdgeIndex);
+
+                constexpr std::array<uint8_t, size_t(EdgeType::MAX_EDGE_TYPE)> edgeTypePriorities = getConstrainedEdgeTypePriorities();
+
+                EdgeType currentEdgeType = currentEdge.data.getEdgeType();
+                uint8_t currentPriority = edgeTypePriorities[size_t(currentEdgeType)];
+                uint8_t newPriority = edgeTypePriorities[size_t(constrainedEdgeType)];
+
+                if (newPriority > currentPriority)
                 {
-                    constexpr std::array<uint8_t, size_t(EdgeType::MAX_EDGE_TYPE)> edgeTypePriorities = getConstrainedEdgeTypePriorities();
+                    // New edge type is higher priority, overwrite
 
-                    EdgeType currentEdgeType = currentEdgeData->getEdgeType();
-                    uint8_t currentPriority = edgeTypePriorities[size_t(currentEdgeType)];
-                    uint8_t newPriority = edgeTypePriorities[size_t(constrainedEdgeType)];
+                    HalfEdge& oppositeEdge = _topology.getEdge(currentEdge.opposite);
 
-                    if (newPriority > currentPriority)
+                    switch (constrainedEdgeType)
                     {
-                        // new edge type is higher priority, overwrite
-
-                        switch (constrainedEdgeType)
-                        {
-                            case EdgeType::ManuallyConstrained:
-                                currentEdgeData->data = typename EdgeData::ManuallyConstrainedEdgeTag{ };
-                                break;
-                            case EdgeType::AutoDetect:
-                            case EdgeType::Outline:
-                            case EdgeType::Hole:
-                                currentEdgeData->data = typename EdgeData::OutlineOrHoleData
-                                {
-                                    .polylineIndex = polylineIndex,
-                                    .type = constrainedEdgeType
-                                };
-
-                                break;
-                            DETRIA_UNLIKELY default:
-                                DETRIA_ASSERT(false);
-                                break;
-                        }
-                    }
-                    else if (newPriority == currentPriority)
-                    {
-                        // same priority, so the types must also be the same
-
-                        if (currentEdgeType != constrainedEdgeType) DETRIA_UNLIKELY
-                        {
-                            // cannot have an edge that is both an outline and a hole
-                            return fail(TE_EdgeWithDifferentConstrainedTypes
+                        case EdgeType::ManuallyConstrained:
+                            currentEdge.data.data = oppositeEdge.data.data = typename EdgeData::ManuallyConstrainedEdgeTag{ };
+                            break;
+                        case EdgeType::AutoDetect:
+                        case EdgeType::Outline:
+                        case EdgeType::Hole:
+                            currentEdge.data.data = oppositeEdge.data.data = typename EdgeData::OutlineOrHoleData
                             {
-                                .idx0 = idxA,
-                                .idx1 = idxB
-                            });
-                        }
+                                .polylineIndex = polylineIndex,
+                                .type = constrainedEdgeType
+                            };
+
+                            break;
+                        DETRIA_UNLIKELY default:
+                            DETRIA_ASSERT(false);
+                            break;
                     }
-                    // else lower priority, don't do anything
                 }
-                else
+                else if (newPriority == currentPriority)
                 {
-                    DETRIA_ASSERT(false);
+                    // Same priority, so the types must also be the same
+
+                    if (currentEdgeType != constrainedEdgeType) DETRIA_UNLIKELY
+                    {
+                        // Cannot have an edge that is both an outline and a hole
+                        return fail(TE_EdgeWithDifferentConstrainedTypes
+                        {
+                            .idx0 = idxA,
+                            .idx1 = idxB
+                        });
+                    }
                 }
+                // Else lower priority, don't do anything
 
                 return true;
             }
 
             /*
-            example:
+            Example:
 
                  a         b
                  *---------*
@@ -3912,91 +3464,104 @@ namespace detria
                  *---------*
                  c         d
 
-            we want to create a constrained edge between v0 and v1
-            start from v0
-            since triangles are cw, there must be a triangle which contains v0, and has points pNext and pPrev,
+            We want to create a constrained edge between v0 and v1
+            Start from v0
+            Since triangles are cw, there must be a triangle which contains v0, and has points pNext and pPrev,
             for which orient2d(v0, v1, pNext) == CCW and orient2d(v0, v1, pPrev) == CW
-            in the current example, the starting triangle is "v0 a c"
-            the next triangle is the other triangle of edge "a c"
-            check the third point of that next triangle (b), whether orient2d(v0, v1, b) is CW or CCW
-            if CW, then the next edge is "a b", if CCW, then "c b"
-            repeat this until we find v1 in one of the triangles
-            also keep track of the outer vertices for both the CW and CCW side
+            In the current example, the starting triangle is "v0 a c"
+            The next triangle is the other triangle of edge "a c"
+            Check the third point of that next triangle (b), whether orient2d(v0, v1, b) is CW or CCW
+            If CW, then the next edge is "a b", if CCW, then "c b"
+            Repeat this until we find v1 in one of the triangles
+            Also keep track of the outer vertices for both the CW and CCW side
             (in this example, the CW side is "v0 c d v1", CCW side is "v0 a b v1")
-            then, remove all in-between triangles, and re-triangulate the CW and CCW sides separately
-            this will create an edge between v0 and v1
+            Then re-triangulate the CW and CCW sides separately
+            This will ensure that an edge exists between v0 and v1
             */
 
             const Point& p0 = _points[size_t(v0.index)];
             const Point& p1 = _points[size_t(v1.index)];
 
-            TTriangle initialTriangle{ };
+            THalfEdge initialTriangleEdge{ };
             TVertex vertexCW{ };
             TVertex vertexCCW{ };
 
-            // find initial triangle, which is in the direction of the other point
-            DETRIA_CHECK(findInitialTriangleForConstrainedEdge(v0, v1, p0, p1, initialTriangle, vertexCW, vertexCCW));
+            // Find initial triangle, which is in the direction of the other point
+            DETRIA_CHECK(findInitialTriangleForConstrainedEdge(v0, v1, p0, p1, initialTriangleEdge, vertexCW, vertexCCW));
 
             _constrainedEdgeVerticesCW.clear();
             _constrainedEdgeVerticesCCW.clear();
 
-            // traverse adjacent triangles, until we reach v1
-            // store vertex indices of the triangles along the way
-            DETRIA_CHECK(removeInnerTrianglesAndGetOuterVertices(v0, v1, p0, p1, vertexCW, vertexCCW, initialTriangle,
+            // Traverse adjacent triangles, until we reach v1
+            // Store vertex indices of the triangles along the way
+            // Also store the deleted edges, those will be reused later
+            // Since the total number of edges doesn't change here, we will always exactly have the right amount of edges
+            _deletedConstrainedEdges.clear();
+            DETRIA_CHECK(removeInnerTrianglesAndGetOuterVertices(v0, v1, p0, p1, vertexCW, vertexCCW, initialTriangleEdge,
                 _constrainedEdgeVerticesCW, _constrainedEdgeVerticesCCW));
 
-            // create new edge, and mark it constrained
-            TEdge constrainedEdge = _topologyMesh.createEdge(v0, v1);
+            // Create new edge, and mark it constrained
+            THalfEdge beforeV0 = _topology.getEdgeBetween(v0, _constrainedEdgeVerticesCCW[1]); // First is v0
+            THalfEdge beforeV1 = _topology.getEdgeBetween(v1, _constrainedEdgeVerticesCW[_constrainedEdgeVerticesCW.size() - 2]); // Last is v1
+
+            THalfEdge constrainedEdgeIndex = _topology.createNewEdge(v0, v1, beforeV0, beforeV1, _deletedConstrainedEdges.back());
+            _deletedConstrainedEdges.pop_back();
+
+            HalfEdge& constrainedEdge = _topology.getEdge(constrainedEdgeIndex);
+            HalfEdge& oppositeConstrainedEdge = _topology.getEdge(constrainedEdge.opposite);
+
             if (constrainedEdgeType == EdgeType::ManuallyConstrained)
             {
-                _topologyMesh.setEdgeData(constrainedEdge, EdgeData
+                constrainedEdge.data = oppositeConstrainedEdge.data = EdgeData
                 {
                     .data = typename EdgeData::ManuallyConstrainedEdgeTag{ },
-                    .isDelaunay = false
-                });
+                    .flags = EdgeData::Flags::None
+                };
             }
             else
             {
-                _topologyMesh.setEdgeData(constrainedEdge, EdgeData
+                constrainedEdge.data = oppositeConstrainedEdge.data = EdgeData
                 {
                     .data = typename EdgeData::OutlineOrHoleData
                     {
                         .polylineIndex = polylineIndex,
                         .type = constrainedEdgeType
                     },
-                    .isDelaunay = false
-                });
+                    .flags = EdgeData::Flags::None
+                };
             }
 
-            // re-triangulate deleted triangles
+            // Re-triangulate deleted triangles
 
             DETRIA_CHECK(
-                reTriangulateAroundConstrainedEdge<true>(_constrainedEdgeVerticesCW, delaunay) &&
-                reTriangulateAroundConstrainedEdge<false>(_constrainedEdgeVerticesCCW, delaunay)
+                reTriangulateAroundConstrainedEdge(_constrainedEdgeVerticesCW, delaunay, true) &&
+                reTriangulateAroundConstrainedEdge(_constrainedEdgeVerticesCCW, delaunay, false)
             );
+
+            DETRIA_DEBUG_ASSERT(_deletedConstrainedEdges.empty());
 
             return true;
         }
 
         bool findInitialTriangleForConstrainedEdge(const TVertex& v0, const TVertex& v1, const Point& p0, const Point& p1,
-            TTriangle& initialTriangle, TVertex& vertexCW, TVertex& vertexCCW)
+            THalfEdge& initialTriangleEdge, TVertex& vertexCW, TVertex& vertexCCW)
         {
             bool found = false;
             bool error = false;
 
-            _topologyMesh.forEachTriangleOfVertex(v0, [&](const VTRelation& relation)
+            Vector2 p0Position = adapt(p0);
+            Vector2 p1Position = adapt(p1);
+
+            _topology.forEachEdgeOfVertex(v0, [&](THalfEdge e)
             {
-                TTriangle tri = relation.triangle();
-                Idx indexInTriangle = _topologyMesh.getVertexIndexInTriangle(tri, v0);
-                Idx prevIndexInTriangle = topology::prev3(indexInTriangle);
-                Idx nextIndexInTriangle = topology::next3(indexInTriangle);
-                TVertex prevVertex = _topologyMesh.getVertexOfTriangle(tri, prevIndexInTriangle);
-                TVertex nextVertex = _topologyMesh.getVertexOfTriangle(tri, nextIndexInTriangle);
+                const HalfEdge& edge = _topology.getEdge(e);
+                const HalfEdge& nextEdge = _topology.getEdge(edge.nextEdge);
 
-                // we are looking for a triangle where "v0, v1, nextVertex" is ccw, and "v0, v1, prevVertex" is cw
+                TVertex prevVertex = _topology.getEdge(nextEdge.opposite).vertex;
+                TVertex nextVertex = _topology.getEdge(edge.opposite).vertex;
 
-                Vector2 p0Position = adapt(p0);
-                Vector2 p1Position = adapt(p1);
+                // We are looking for a triangle where "v0, v1, nextVertex" is ccw, and "v0, v1, prevVertex" is cw
+
                 Vector2 prevVertexPosition = adapt(_points[size_t(prevVertex.index)]);
                 Vector2 nextVertexPosition = adapt(_points[size_t(nextVertex.index)]);
 
@@ -4005,11 +3570,11 @@ namespace detria
 
                 if (orientPrev == math::Orientation::Collinear || orientNext == math::Orientation::Collinear) DETRIA_UNLIKELY
                 {
-                    // we found a point which is exactly on the line
-                    // check if it's between v0 and v1
-                    // if yes, then this means that an edge would have to go 3 points, which would create degenerate triangles
-                    // if this is a steiner point, then maybe we could remove it, but for now, this is an error
-                    // if it's not between, then simply skip this triangle
+                    // We found a point which is exactly on the line
+                    // Check if it's between v0 and v1
+                    // If yes, then this means that an edge would have to go 3 points, which would create degenerate triangles
+                    // If this is a steiner point, then maybe we could remove it, but for now, this is an error
+                    // If it's not between, then simply skip this triangle
 
                     auto isBetween = [&](Vector2 point)
                     {
@@ -4021,14 +3586,14 @@ namespace detria
                         Scalar pointValue{ };
                         if (xDiff > yDiff)
                         {
-                            // compare x coordinate
+                            // Compare x coordinate
                             p0Value = p0Position.x;
                             p1Value = p1Position.x;
                             pointValue = point.x;
                         }
                         else
                         {
-                            // compare y coordinate
+                            // Compare y coordinate
                             p0Value = p0Position.y;
                             p1Value = p1Position.y;
                             pointValue = point.y;
@@ -4070,10 +3635,10 @@ namespace detria
                 }
                 else if (orientPrev == math::Orientation::CW && orientNext == math::Orientation::CCW)
                 {
-                    // correct orientation, triangle found
+                    // Correct orientation, triangle found
                     found = true;
 
-                    initialTriangle = tri;
+                    initialTriangleEdge = e;
                     vertexCW = prevVertex;
                     vertexCCW = nextVertex;
 
@@ -4089,7 +3654,7 @@ namespace detria
         }
 
         bool removeInnerTrianglesAndGetOuterVertices(const TVertex& v0, const TVertex& v1, const Point& p0, const Point& p1,
-            TVertex vertexCW, TVertex vertexCCW, const TTriangle& initialTriangle,
+            TVertex vertexCW, TVertex vertexCCW, THalfEdge initialTriangleEdge,
             CollectionWithAllocator<TVertex>& verticesCW, CollectionWithAllocator<TVertex>& verticesCCW)
         {
             verticesCW.push_back(v0);
@@ -4097,19 +3662,15 @@ namespace detria
             verticesCCW.push_back(v0);
             verticesCCW.push_back(vertexCCW);
 
-            TTriangle prevTriangle = initialTriangle;
+            THalfEdge edgeAcross = _topology.getEdge(_topology.getOpposite(initialTriangleEdge)).prevEdge;
 
             while (true)
             {
-                TEdge edge = _topologyMesh.getEdgeBetweenVertices(vertexCW, vertexCCW);
-                DETRIA_DEBUG_ASSERT(edge.valid());
-
-                EdgeType edgeType = _topologyMesh.getEdgeData(edge)->getEdgeType();
-
-                if (edgeType != EdgeType::NotConstrained) DETRIA_UNLIKELY
+                const HalfEdge& edge = _topology.getEdge(edgeAcross);
+                if (edge.data.getEdgeType() != EdgeType::NotConstrained) DETRIA_UNLIKELY
                 {
-                    // to constrain the current edge, we'd have to remove another edge that is already constrained
-                    // this probably means that some outlines or holes are intersecting
+                    // To constrain the current edge, we'd have to remove another edge that is already constrained
+                    // This means that some outlines or holes are intersecting
                     return fail(TE_ConstrainedEdgeIntersection
                     {
                         .idx0 = v0.index,
@@ -4119,53 +3680,54 @@ namespace detria
                     });
                 }
 
-                // remove triangle, since it will be re-triangulated
-                _topologyMesh.removeTriangle(prevTriangle);
-                _topologyMesh.removeEdge(edge);
+                THalfEdge indexOfEdgeOfThirdVertex = _topology.getOpposite(edge.prevEdge);
+                const HalfEdge& edgeOfThirdVertex = _topology.getEdge(indexOfEdgeOfThirdVertex);
+                TVertex thirdVertex = edgeOfThirdVertex.vertex;
 
-                // the edge should only have one triangle now
-                TTriangle nextTriangle = _topologyMesh.getFirstTriangleOfEdge(edge).triangle();
-                DETRIA_DEBUG_ASSERT(nextTriangle.valid() && nextTriangle.index != prevTriangle.index);
+                THalfEdge nextEdgeAcross{ };
 
-                prevTriangle = nextTriangle;
-
-                Idx nextIndexInTriangleCW = _topologyMesh.getVertexIndexInTriangle(nextTriangle, vertexCW);
-                Idx nextIndexInTriangleCCW = _topologyMesh.getVertexIndexInTriangle(nextTriangle, vertexCCW);
-
-                Idx thirdVertexIndexInTriangle = topology::other3(nextIndexInTriangleCW, nextIndexInTriangleCCW);
-                TVertex thirdVertex = _topologyMesh.getVertexOfTriangle(nextTriangle, thirdVertexIndexInTriangle);
-                if (thirdVertex.index == v1.index)
+                bool reachedOtherEnd = thirdVertex == v1;
+                if (!reachedOtherEnd)
                 {
-                    // reached v1
+                    // Find next direction
+
+                    math::Orientation orientation = orient2d(adapt(p0), adapt(p1), adapt(_points[size_t(thirdVertex.index)]));
+                    if (orientation == math::Orientation::Collinear) DETRIA_UNLIKELY
+                    {
+                        // Point on a constrained edge, this is not allowed
+                        return fail(TE_PointOnConstrainedEdge
+                        {
+                            .pointIndex = thirdVertex.index,
+                            .edgePointIndex0 = v0.index,
+                            .edgePointIndex1 = v1.index
+                        });
+                    }
+
+                    if (orientation == math::Orientation::CW)
+                    {
+                        vertexCW = thirdVertex;
+                        verticesCW.push_back(thirdVertex);
+                        nextEdgeAcross = edgeOfThirdVertex.opposite;
+                    }
+                    else
+                    {
+                        vertexCCW = thirdVertex;
+                        verticesCCW.push_back(thirdVertex);
+                        nextEdgeAcross = edgeOfThirdVertex.prevEdge;
+                    }
+                }
+
+                // Remove edge
+                _topology.unlinkEdge(edgeAcross);
+                _deletedConstrainedEdges.push_back(edgeAcross);
+
+                if (reachedOtherEnd)
+                {
                     break;
                 }
 
-                math::Orientation orientation = orient2d(adapt(p0), adapt(p1), adapt(_points[size_t(thirdVertex.index)]));
-                if (orientation == math::Orientation::Collinear) DETRIA_UNLIKELY
-                {
-                    // point on a constrained edge, this is not allowed
-                    return fail(TE_PointOnConstrainedEdge
-                    {
-                        .pointIndex = thirdVertex.index,
-                        .edgePointIndex0 = v0.index,
-                        .edgePointIndex1 = v1.index
-                    });
-                }
-
-                if (orientation == math::Orientation::CW)
-                {
-                    vertexCW = thirdVertex;
-                    verticesCW.push_back(thirdVertex);
-                }
-                else
-                {
-                    vertexCCW = thirdVertex;
-                    verticesCCW.push_back(thirdVertex);
-                }
+                edgeAcross = nextEdgeAcross;
             }
-
-            // remove last triangle (which has v1)
-            _topologyMesh.removeTriangle(prevTriangle);
 
             verticesCW.push_back(v1);
             verticesCCW.push_back(v1);
@@ -4175,13 +3737,11 @@ namespace detria
             return true;
         }
 
-        template <bool IsCW>
-        bool reTriangulateAroundConstrainedEdge(const CollectionWithAllocator<TVertex>& vertices, bool delaunay)
+        bool reTriangulateAroundConstrainedEdge(const CollectionWithAllocator<TVertex>& vertices, bool delaunay, bool isCW)
         {
             /*
             `requiredOrientation` depends on which side of the line we are on
-            for example, let's say we have to re-triangulate this:
-            (note that there is no actual edge between v0 and v1 at this point, it will be implicitly added with the re-triangulation)
+            For example, let's say we have to re-triangulate this:
 
               v0    a     b
                 *---*---*
@@ -4191,22 +3751,30 @@ namespace detria
               *-----*
              d      v1
 
-            we want to triangulate "v0 a b v1" and "v0 c d v1"
-            the first polyline is CCW, the second is CW, because all points are on that side of the "v0 v1" line
-            when triangulating the first polyline, we can only add a triangle if the vertices are CW
-            so for example, we cannot add the "v0 a b" triangle, because the points are not CW, they are collinear; but we can add "a b v1"
-            similarly, for the second polyline, we can only add a triangle if the points are CCW, so we can add "v0 c d"
-            so:
+            We want to triangulate "v0 a b v1" and "v0 c d v1"
+            The first polyline is CCW, the second is CW, because all points are on that side of the "v0 v1" line
+            When triangulating the first polyline, we can only add a triangle if the vertices are CW
+            So for example, we cannot add the "v0 a b" triangle, because the points are not CW, they are collinear; but we can add "a b v1"
+            Similarly, for the second polyline, we can only add a triangle if the points are CCW, so we can add "v0 c d"
+            So:
                 CW side of the "v0 v1" line -> `requiredOrientation` == CCW
                 CCW side -> `requiredOrientation` == CW
             */
 
-            constexpr math::Orientation requiredOrientation = IsCW ? math::Orientation::CCW : math::Orientation::CW;
+            math::Orientation requiredOrientation = isCW ? math::Orientation::CCW : math::Orientation::CW;
 
             _constrainedEdgeReTriangulationStack.clear();
 
             _constrainedEdgeReTriangulationStack.push_back(vertices[0]);
             _constrainedEdgeReTriangulationStack.push_back(vertices[1]);
+
+            auto getReusedEdge = [&]()
+            {
+                DETRIA_DEBUG_ASSERT(!_deletedConstrainedEdges.empty());
+                THalfEdge reusedEdge = _deletedConstrainedEdges.back();
+                _deletedConstrainedEdges.pop_back();
+                return reusedEdge;
+            };
 
             for (size_t i = 2; i < vertices.size(); ++i)
             {
@@ -4225,30 +3793,49 @@ namespace detria
 
                     if (orientation == requiredOrientation)
                     {
-                        // add triangle
-                        TTriangle tri{ };
-                        if constexpr (IsCW)
+                        // Add edge if needed
+
+                        std::optional<THalfEdge> oppositeEdge{ };
+                        if (isCW)
                         {
-                            tri = _topologyMesh.createTriangle(currentVertex, prevVertex, prevPrevVertex);
+                            if (!_topology.getEdgeBetween(prevPrevVertex, currentVertex).isValid())
+                            {
+                                oppositeEdge = _topology.getEdgeBetween(prevPrevVertex, prevVertex);
+
+                                _topology.createNewEdge(prevPrevVertex, currentVertex,
+                                    _topology.getEdge(*oppositeEdge).prevEdge,
+                                    _topology.getEdgeBetween(currentVertex, prevVertex),
+                                    getReusedEdge()
+                                );
+                            }
                         }
                         else
                         {
-                            tri = _topologyMesh.createTriangle(currentVertex, prevPrevVertex, prevVertex);
+                            if (!_topology.getEdgeBetween(currentVertex, prevPrevVertex).isValid())
+                            {
+                                oppositeEdge = _topology.getEdgeBetween(prevPrevVertex, prevVertex);
+
+                                _topology.createNewEdge(currentVertex, prevPrevVertex,
+                                    _topology.getEdge(_topology.getEdgeBetween(currentVertex, prevVertex)).prevEdge,
+                                    *oppositeEdge,
+                                    getReusedEdge()
+                                );
+                            }
                         }
 
-                        // update stack
+                        // Update stack
                         _constrainedEdgeReTriangulationStack.pop_back();
 
-                        if (delaunay)
+                        if (delaunay && oppositeEdge.has_value())
                         {
-                            // ensure delaunay criteria for the newly inserted triangle
-                            // usually, the triangles are already delaunay, but sometimes not, so check it here
+                            // Ensure delaunay criteria for the newly inserted triangle
+                            // Usually, the triangles are already delaunay, but sometimes not, so check it here
 
-                            DETRIA_CHECK(delaunayEdgeFlip(currentVertex, _topologyMesh.getEdgeOfTriangle(tri, 0)));
+                            DETRIA_CHECK(delaunayEdgeFlip(currentVertex, *oppositeEdge));
                         }
 
-                        // if there are more than one items left in the stack, then go back and try to triangulate again
-                        // otherwise just break
+                        // If there are more than one items left in the stack, then go back and try to triangulate again
+                        // Otherwise just break
                         if (_constrainedEdgeReTriangulationStack.size() < 2)
                         {
                             DETRIA_ASSERT(_constrainedEdgeReTriangulationStack.size() == 1);
@@ -4257,7 +3844,7 @@ namespace detria
                     }
                     else
                     {
-                        // cannot add triangle, will try again later, after adding a new vertex
+                        // Cannot add triangle, will try again later, after adding a new vertex
                         break;
                     }
                 }
@@ -4269,44 +3856,112 @@ namespace detria
             return true;
         }
 
-        bool classifyTriangles(const TEdge& startingConvexHullEdge)
+        bool classifyTriangles(THalfEdge startingConvexHullEdge)
         {
-            DETRIA_ASSERT(startingConvexHullEdge.valid());
+            DETRIA_ASSERT(startingConvexHullEdge.isValid());
 
-            EdgeData startingEdgeData = *_topologyMesh.getEdgeData(startingConvexHullEdge);
+            const EdgeData& startingEdgeData = _topology.getEdgeData(startingConvexHullEdge);
             EdgeType startingEdgeType = startingEdgeData.getEdgeType();
             if (startingEdgeType == EdgeType::Hole)
             {
-                // if this happens, then it means that an outer polyline is a hole, which is invalid
+                // If this happens, then it means that an outer polyline is a hole, which is invalid
                 return fail(TE_HoleNotInsideOutline{ });
             }
 
-            // outer edge, only has one triangle
-            TTriangle startingTriangle = _topologyMesh.getFirstTriangleOfEdge(startingConvexHullEdge).triangle();
-            _topologyMesh.setTriangleData(startingTriangle, TriangleData
-            {
-                .data = typename TriangleData::KnownLocationData
-                {
-                    // nullopt if the edge is not part of an outline or a hole
-                    .parentPolylineIndex = startingEdgeData.getOutlineOrHoleIndex()
-                }
-            });
+            _resultTriangles.clear();
+            _triangleData.clear();
 
-            // for each polyline, store which other polyline contains them
+            // Euler characteristic: number of triangles == number of edges - number of vertices + 1
+            // Since the outer "face" doesn't exist, only add 1 instead of 2
+            size_t expectedTriangleCount = 1 + _topology.halfEdgeCount() / 2 - _topology.vertexCount();
+            _resultTriangles.reserve(expectedTriangleCount);
+
+            // Create all triangles
+
+            CollectionWithAllocator<TriangleIndex> trianglesByHalfEdgeIndex(_allocator.template createStlAllocator<bool>());
+            trianglesByHalfEdgeIndex.resize(_topology.halfEdgeCount());
+
+            {
+                CollectionWithAllocator<bool> checkedHalfEdges(_allocator.template createStlAllocator<bool>());
+                checkedHalfEdges.resize(_topology.halfEdgeCount(), false);
+
+                auto getTriangle = [&](THalfEdge edge, TriangleIndex triangleIndex)
+                {
+                    const HalfEdge& e0 = _topology.getEdge(edge);
+
+                    THalfEdge e1i = _topology.getEdge(e0.opposite).prevEdge;
+                    const HalfEdge& e1 = _topology.getEdge(e1i);
+
+                    THalfEdge e2i = _topology.getEdge(e1.opposite).prevEdge;
+                    const HalfEdge& e2 = _topology.getEdge(e2i);
+
+                    checkedHalfEdges[size_t(edge.index)] = true;
+                    checkedHalfEdges[size_t(e1i.index)] = true;
+                    checkedHalfEdges[size_t(e2i.index)] = true;
+
+                    trianglesByHalfEdgeIndex[size_t(edge.index)] = triangleIndex;
+                    trianglesByHalfEdgeIndex[size_t(e1i.index)] = triangleIndex;
+                    trianglesByHalfEdgeIndex[size_t(e2i.index)] = triangleIndex;
+
+                    return Tri
+                    {
+                        .x = e0.vertex.index,
+                        .y = e1.vertex.index,
+                        .z = e2.vertex.index
+                    };
+                };
+
+                for (size_t i = 0; i < _topology.vertexCount(); ++i)
+                {
+                    TVertex vertex = TVertex(Idx(i));
+
+                    _topology.forEachEdgeOfVertex(vertex, [&](THalfEdge e)
+                    {
+                        if (checkedHalfEdges[size_t(e.index)])
+                        {
+                            // Edge already checked
+                            return;
+                        }
+
+                        if (_topology.getEdgeData(e).isBoundary())
+                        {
+                            // Half-edge is boundary, don't add its triangle
+                            checkedHalfEdges[size_t(e.index)] = true;
+                            return;
+                        }
+
+                        TriangleIndex triangleIndex = TriangleIndex(Idx(_triangleData.size()));
+                        _resultTriangles.emplace_back(getTriangle(e, triangleIndex));
+                        _triangleData.emplace_back().firstEdge = e;
+                    });
+                }
+            }
+
+            // Outer edge, only has one triangle
+            TriangleIndex startingTriangle = trianglesByHalfEdgeIndex[size_t(startingConvexHullEdge.index)];
+            DETRIA_ASSERT(startingTriangle.isValid());
+
+            _triangleData[startingTriangle.index].locationData = typename TriangleData::KnownLocationData
+            {
+                // nullopt if the edge is not part of an outline or a hole
+                .parentPolylineIndex = startingEdgeData.getOutlineOrHoleIndex()
+            };
+
+            // For each polyline, store which other polyline contains them
             _parentPolylines.resize(_polylines.size());
 
             _autoDetectedPolylineTypes.resize(_polylines.size(), EdgeType::AutoDetect);
 
             CollectionWithAllocator<bool>& checkedTriangles = _classifyTriangles_CheckedTriangles;
-            checkedTriangles.resize(size_t(_topologyMesh.getTriangleUsedCount()));
+            checkedTriangles.resize(_resultTriangles.size());
             checkedTriangles[size_t(startingTriangle.index)] = true;
 
-            CollectionWithAllocator<TTriangle>& trianglesToCheck = _classifyTriangles_TrianglesToCheck;
+            CollectionWithAllocator<TriangleIndex>& trianglesToCheck = _classifyTriangles_TrianglesToCheck;
             trianglesToCheck.push_back(startingTriangle);
 
             if (startingEdgeType == EdgeType::AutoDetect)
             {
-                // convex hull edge is auto-detect, so it must be an outline
+                // Convex hull edge is auto-detect, so it must be an outline
                 if (std::optional<Idx> startingEdgePolylineIndex = startingEdgeData.getOutlineOrHoleIndex())
                 {
                     _autoDetectedPolylineTypes[size_t(*startingEdgePolylineIndex)] = EdgeType::Outline;
@@ -4319,30 +3974,37 @@ namespace detria
 
             while (!trianglesToCheck.empty())
             {
-                TTriangle currentTriangle = trianglesToCheck.back();
+                TriangleIndex currentTriangle = trianglesToCheck.back();
                 trianglesToCheck.pop_back();
 
-                const typename TriangleData::KnownLocationData* currentTriangleData =
-                    std::get_if<typename TriangleData::KnownLocationData>(&_topologyMesh.getTriangleData(currentTriangle)->data);
+                const auto& currentTriangleData = _triangleData[size_t(currentTriangle.index)];
+                const typename TriangleData::KnownLocationData* currentTriangleLocationData =
+                    std::get_if<typename TriangleData::KnownLocationData>(&currentTriangleData.locationData);
 
-                DETRIA_ASSERT(currentTriangleData != nullptr);
+                DETRIA_ASSERT(currentTriangleLocationData != nullptr);
 
-                bool currentTriangleIsInterior = getTriangleLocation(*currentTriangleData) == TriangleLocation::Interior;
+                bool currentTriangleIsInterior = getTriangleLocation(*currentTriangleLocationData) == TriangleLocation::Interior;
+
+                std::array<THalfEdge, 3> edgesOfCurrentTriangle{ };
+                edgesOfCurrentTriangle[0] = currentTriangleData.firstEdge;
+                edgesOfCurrentTriangle[1] = _topology.getEdge(_topology.getOpposite(edgesOfCurrentTriangle[0])).prevEdge;
+                edgesOfCurrentTriangle[2] = _topology.getEdge(_topology.getOpposite(edgesOfCurrentTriangle[1])).prevEdge;
 
                 for (Idx i = 0; i < 3; ++i)
                 {
-                    TEdge edge = _topologyMesh.getEdgeOfTriangle(currentTriangle, i);
+                    THalfEdge edgeIndex = edgesOfCurrentTriangle[i];
+                    const HalfEdge& edge = _topology.getEdge(edgeIndex);
 
-                    TTriangle neighborTriangle = getOtherTriangleOfEdge(currentTriangle, edge);
-                    if (!neighborTriangle.valid())
+                    TriangleIndex neighborTriangle = trianglesByHalfEdgeIndex[size_t(edge.opposite.index)];
+                    if (!neighborTriangle.isValid())
                     {
-                        // the triangle is on the edge of the entire triangulation, so it does not have all 3 neighbors
+                        // The triangle is on the edge of the entire triangulation, so it does not have all 3 neighbors
                         continue;
                     }
 
                     if (checkedTriangles[size_t(neighborTriangle.index)])
                     {
-                        // this triangle was already checked, don't check it again
+                        // This triangle was already checked, don't check it again
                         continue;
                     }
 
@@ -4350,52 +4012,48 @@ namespace detria
 
                     std::optional<Idx> neighborTriangleParentPolylineIndex{ };
 
-                    const EdgeData& edgeData = *_topologyMesh.getEdgeData(edge);
-                    if (std::optional<Idx> polylineIndex = edgeData.getOutlineOrHoleIndex())
+                    if (std::optional<Idx> polylineIndex = edge.data.getOutlineOrHoleIndex())
                     {
-                        // check which type of edge we just crossed (if this branch is entered, then it's part of either an outline or a hole)
-                        // there are a few possibilites:
-                        // if the triangle is inside, and the edge is part of an outline,
+                        // Check which type of edge we just crossed (if this branch is entered, then it's part of either an outline or a hole)
+                        // There are a few possibilites:
+                        // If the triangle is inside, and the edge is part of an outline,
                         // then the outline's index must be the same as the triangle's parent polyline index
-                        // otherwise it would mean that there is an outline inside another outline, which is not allowed
-                        // same for holes: if the triangle is outside, and the edge is part of a hole,
+                        // Otherwise it would mean that there is an outline inside another outline, which is not allowed
+                        // Same for holes: if the triangle is outside, and the edge is part of a hole,
                         // then it must be the same hole as the current triangle's parent
-                        // outlines can have any number of holes in them, and holes can have any number of outlines too
+                        // Outlines can have any number of holes in them, and holes can have any number of outlines too
 
                         /*
-                        for example:
-                        let's say that we have two polylines: "a" and "b"
+                        For example:
+                        Let's say that we have two polylines: "a" and "b"
 
                           *---*    *---*
                          a|   |   b|   |
                           *---*    *---*
 
-                        let's also say that `startingTriangle` (declared near the start of this function) is not part of any of the polylines
-                        so the classification starts from outside
+                        Let's also say that `startingTriangle` (declared near the start of this function) is not part of any of the polylines
+                        So the classification starts from outside
                         "a" and "b" both must be outlines, otherwise we'd have a hole in an area that is already outside, which is invalid
-                        to verify this, whenever we reach "a" or "b", check if the edge part of an outline or a hole
-                        if it's an outline, then it's fine, because "outside triangle" -> "outline edge" -> "inside triangle" is valid
-                        if it's a hole, then check if the hole's index is the same as the triangle's parent polyline index
-                        since the current triangle is not inside any polyline, its parent polyline index is nullopt, so the indices are not the same
-                        so if either "a" or "b" is a hole, we can detect it, and fail the triangulation
+                        To verify this, whenever we reach "a" or "b", check if the edge part of an outline or a hole
+                        If it's an outline, then it's fine, because "outside triangle" -> "outline edge" -> "inside triangle" is valid
+                        If it's a hole, then check if the hole's index is the same as the triangle's parent polyline index
+                        Since the current triangle is not inside any polyline, its parent polyline index is nullopt, so the indices are not the same
+                        So if either "a" or "b" is a hole, we can detect it, and fail the triangulation
                         */
 
                         EdgeType currentPolylineType = _polylines[size_t(*polylineIndex)].type;
                         if (currentPolylineType == EdgeType::AutoDetect)
                         {
-                            // current type is auto-detect, check if we already already know the actual type
+                            // Current type is auto-detect, check if we already already know the actual type
                             EdgeType& autoDetectedType = _autoDetectedPolylineTypes[size_t(*polylineIndex)];
                             if (autoDetectedType == EdgeType::AutoDetect)
                             {
-                                // type is not known yet, so just set to the opposite
-                                // so if we are outside, then classify as outline
-                                // if we are inside, then classify as hole
+                                // Type is not known yet, so just set to the opposite
+                                // So if we are outside, then classify as outline
+                                // If we are inside, then classify as hole
                                 autoDetectedType = currentTriangleIsInterior ? EdgeType::Hole : EdgeType::Outline;
                             }
-                            else
-                            {
-                                // already classified
-                            }
+                            // Else already classified
 
                             currentPolylineType = autoDetectedType;
                         }
@@ -4403,44 +4061,41 @@ namespace detria
                         bool currentEdgeIsHole = currentPolylineType == EdgeType::Hole;
                         if (currentTriangleIsInterior == currentEdgeIsHole)
                         {
-                            // simple case, we are outside and crossing an outline, or we are inside and crossing a hole (this is always valid)
+                            // Simple case, we are outside and crossing an outline, or we are inside and crossing a hole (this is always valid)
 
-                            // also update the parent for the current polyline
-                            _parentPolylines[size_t(*polylineIndex)] = currentTriangleData->parentPolylineIndex;
+                            // Also update the parent for the current polyline
+                            _parentPolylines[size_t(*polylineIndex)] = currentTriangleLocationData->parentPolylineIndex;
 
-                            // just set index, which implicitly sets the opposite location
+                            // Just set index, which implicitly sets the opposite location
                             neighborTriangleParentPolylineIndex = polylineIndex;
                         }
                         else
                         {
-                            // we are outside and crossing a hole, or we are inside and crossing an outline
-                            if (currentTriangleData->parentPolylineIndex == *polylineIndex) DETRIA_LIKELY
+                            // We are outside and crossing a hole, or we are inside and crossing an outline
+                            if (currentTriangleLocationData->parentPolylineIndex == *polylineIndex) DETRIA_LIKELY
                             {
-                                // valid case, the neighbor triangle is the opposite location
-                                // set its polyline index to the current polyline's parent
+                                // Valid case, the neighbor triangle is the opposite location
+                                // Set its polyline index to the current polyline's parent
 
                                 neighborTriangleParentPolylineIndex = _parentPolylines[size_t(*polylineIndex)];
                             }
                             else
                             {
-                                // invalid case, either an outline is inside another outline, or a hole is inside another hole
+                                // Invalid case, either an outline is inside another outline, or a hole is inside another hole
                                 return fail(TE_StackedPolylines{ .isHole = currentEdgeIsHole });
                             }
                         }
                     }
                     else
                     {
-                        // simple case, we are not crossing outlines or holes, so just propagate the current location
-                        neighborTriangleParentPolylineIndex = currentTriangleData->parentPolylineIndex;
+                        // Simple case, we are not crossing outlines or holes, so just propagate the current location
+                        neighborTriangleParentPolylineIndex = currentTriangleLocationData->parentPolylineIndex;
                     }
 
-                    _topologyMesh.setTriangleData(neighborTriangle, TriangleData
+                    _triangleData[size_t(neighborTriangle.index)].locationData = typename TriangleData::KnownLocationData
                     {
-                        .data = typename TriangleData::KnownLocationData
-                        {
-                            .parentPolylineIndex = neighborTriangleParentPolylineIndex
-                        }
-                    });
+                        .parentPolylineIndex = neighborTriangleParentPolylineIndex
+                    };
 
                     trianglesToCheck.push_back(neighborTriangle);
                 }
@@ -4449,24 +4104,6 @@ namespace detria
             return true;
         }
         
-        inline TTriangle getOtherTriangleOfEdge(const TTriangle& tri, const TEdge& edge)
-        {
-            // we only have 2 triangles per edge maximum
-            // if the edge only has one triangle, then an invalid triangle is returned
-
-            TTriangle otherTriangle{ };
-            _topologyMesh.forEachTriangleOfEdge(edge, [&](const ETRelation& relation)
-            {
-                TTriangle currentTri = relation.triangle();
-                if (currentTri.index != tri.index)
-                {
-                    otherTriangle = currentTri;
-                }
-            });
-
-            return otherTriangle;
-        };
-
         inline TriangleLocation getTriangleLocation(const typename TriangleData::KnownLocationData& data) const
         {
             if (!data.parentPolylineIndex.has_value())
@@ -4487,10 +4124,10 @@ namespace detria
             }
         }
 
-        inline TriangleLocation getTriangleLocation(const TTriangle& tri) const
+        inline TriangleLocation getTriangleLocation(size_t triIndex) const
         {
             const typename TriangleData::KnownLocationData* data =
-                std::get_if<typename TriangleData::KnownLocationData>(&_topologyMesh.getTriangleData(tri)->data);
+                std::get_if<typename TriangleData::KnownLocationData>(&_triangleData[triIndex].locationData);
 
             if (data != nullptr)
             {
@@ -4502,38 +4139,34 @@ namespace detria
         }
 
         template <bool Flip = false>
-        inline Tri getTriangleOriginalIndices(const TTriangle& tri) const
+        inline Tri getTriangleOriginalIndices(size_t triIndex) const
         {
-            Idx x = _topologyMesh.getVertexOfTriangle(tri, 0).index;
-            Idx y = _topologyMesh.getVertexOfTriangle(tri, 1).index;
-            Idx z = _topologyMesh.getVertexOfTriangle(tri, 2).index;
+            Tri tri = _resultTriangles[triIndex];
 
             if constexpr (Flip)
             {
-                return Tri{ .x = x, .y = z, .z = y };
+                std::swap(tri.y, tri.z);
             }
-            else
-            {
-                return Tri{ .x = x, .y = y, .z = z };
-            }
+
+            return tri;
         }
 
         void forEachTriangleInternal(auto&& callback, bool cwTriangles, auto&& shouldProcessTriangle) const
         {
-            _topologyMesh.forEachTriangle([&](const TTriangle& tri)
+            for (size_t i = 0; i < _resultTriangles.size(); ++i)
             {
-                if (shouldProcessTriangle(tri))
+                if (shouldProcessTriangle(i))
                 {
                     if (cwTriangles)
                     {
-                        callback(getTriangleOriginalIndices<false>(tri));
+                        callback(getTriangleOriginalIndices<false>(i));
                     }
                     else
                     {
-                        callback(getTriangleOriginalIndices<true>(tri));
+                        callback(getTriangleOriginalIndices<true>(i));
                     }
                 }
-            });
+            }
         }
 
         inline static math::Orientation orient2d(Vector2 a, Vector2 b, Vector2 c)
@@ -4549,23 +4182,27 @@ namespace detria
     private:
         Allocator _allocator;
 
-        // inputs
+        // Inputs
         detail::ReadonlySpan<Point> _points;
         CollectionWithAllocator<PolylineData> _polylines;
         CollectionWithAllocator<Vec2<Idx>> _manuallyConstrainedEdges;
         CollectionWithAllocator<EdgeType> _autoDetectedPolylineTypes;
 
-        TMesh _topologyMesh;
+        Topology _topology;
 
-        // reused containers for multiple calculations
+        // Reused containers for multiple calculations
         CollectionWithAllocator<Idx> _initialTriangulation_SortedPoints;
         CollectionWithAllocator<TVertex> _constrainedEdgeVerticesCW;
         CollectionWithAllocator<TVertex> _constrainedEdgeVerticesCCW;
+        CollectionWithAllocator<THalfEdge> _deletedConstrainedEdges;
         CollectionWithAllocator<TVertex> _constrainedEdgeReTriangulationStack;
         CollectionWithAllocator<bool> _classifyTriangles_CheckedTriangles;
-        CollectionWithAllocator<TTriangle> _classifyTriangles_TrianglesToCheck;
+        CollectionWithAllocator<TriangleIndex> _classifyTriangles_TrianglesToCheck;
 
-        // results which are not related to the triangulation directly
+        CollectionWithAllocator<Tri> _resultTriangles;
+        CollectionWithAllocator<TriangleData> _triangleData;
+
+        // Results which are not related to the triangulation directly
         List _convexHullPoints;
         Idx _convexHullStartIndex = Idx(-1);
         CollectionWithAllocator<std::optional<Idx>> _parentPolylines;
@@ -4574,7 +4211,7 @@ namespace detria
         {
             TVertex v0;
             TVertex v1;
-            TEdge edge;
+            THalfEdge edge;
         };
 
         CollectionWithAllocator<TopologyEdgeWithVertices> _delaunayCheckStack;
