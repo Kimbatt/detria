@@ -1,9 +1,9 @@
 # Basic usage
 To triangulate a polygon, you'll need to create a `detria::Triangulation` instance, and provide the list of points and the list of polylines:
 ```cpp
-// create a square, and triangulate it
+// Create a square, and triangulate it
 
-// list of points (positions)
+// List of points (positions)
 std::vector<detria::PointD> points =
 {
     { 0.0, 0.0 },
@@ -12,7 +12,7 @@ std::vector<detria::PointD> points =
     { 0.0, 1.0 }
 };
 
-// list of point indices
+// List of point indices
 std::vector<size_t> outline = { 0, 1, 2, 3 };
 
 bool delaunay = true;
@@ -25,9 +25,9 @@ bool success = tri.triangulate(delaunay);
 
 if (success)
 {
-    // iterate over the result triangles
+    // Iterate over the result triangles
 
-    // should the result triangles be in CW order?
+    // Should the result triangles be in CW order?
     bool cwTriangles = true;
 
     tri.forEachTriangle([&](detria::Triangle<size_t> triangle)
@@ -82,7 +82,7 @@ else
     tri.setPoints(points);
 }
 
-// will crash, the pointer stored in the triangulation is invalid
+// Will crash, the pointer stored in the triangulation is invalid
 tri.triangulate(true);
 ```
 
@@ -93,9 +93,9 @@ detria::Triangulation tri;
 std::vector<detria::PointD> points = getPoints(...);
 tri.setPoints(points);
 
-points.push_back(getSomeOtherPoint()); // the vector might reallocate here
+points.push_back(getSomeOtherPoint()); // The vector might reallocate here
 
-// undefined behavior, the pointer inside `points` might have been reallocated, and might point to freed memory
+// Undefined behavior, the pointer inside `points` might have been reallocated, and might point to freed memory
 tri.triangulate(true);
 ```
 
@@ -118,13 +118,13 @@ Code example:
 tri.forEachTriangleOfLocation(
     [](const detria::Triangle<Idx>& triangle, detria::TriangleLocation location)
     {
-        // do something with `triangle` and `location`
+        // Do something with `triangle` and `location`
     },
 
-    // you can specify multiple locations
+    // You can specify multiple locations
     detria::TriangleLocation::Interior | detria::TriangleLocation::Hole,
 
-    // should the triangles be in clockwise order?
+    // Should the triangles be in clockwise order?
     true
 );
 ```
@@ -133,11 +133,11 @@ tri.forEachTriangleOfLocation(
 It's possible to create the delaunay triangulation without any polylines/constrained edges:
 ```cpp
 detria::Triangulation tri;
-// only set points, don't add any polylines
+// Only set points, don't add any polylines
 tri.setPoints(...);
 if (tri.triangulate(true))
 {
-    // iterate over the triangles
+    // Iterate over the triangles
     tri.forEachTriangleOfEveryLocation([](const detria::Triangle<size_t>& triangle)
     {
         // ...
@@ -166,8 +166,8 @@ tri.setPoints(...);
 Idx outlineIndex = tri.addOutline(...);
 if (tri.triangulate(true))
 {
-    // if the polyline is top-level (has no parent), then nullopt is returned
-    // otherwise, the parent index of the polyline is returned
+    // If the polyline is top-level (has no parent), then nullopt is returned
+    // Otherwise, the parent index of the polyline is returned
     std::optional<Idx> parentIndex = tri.getParentPolylineIndex(outlineIndex);
     // `parentIndex` should be nullopt here, since it's the only polyline 
 }
@@ -199,14 +199,14 @@ struct DefaultTriangulationConfig
     template <typename T, typename Allocator>
     using Collection = std::vector<T, Allocator>;
 
-    // etc...
+    // Etc...
 };
 ```
 
 Template parameters:
 - `Point` - The point type used in the triangulation, more details about this in the next section.
 - `Idx` - The index type, which will be used when referring to vertex indices. You can use types like `size_t` instead of `uint32_t` if you have the indices in that format.  
-Note that the number of points should be less than the max value of the type divided by 8, so e.g. 2^29 for 32-bit numbers, or 8192 for 19-bit. This is because internally, the same index type is used to store vertex-triangle relations, which can be 4\*triangle count, and triangle count is arount 2\*vertex count.
+Note that because a half-edge data structure is used (which uses two indices per edge), the number of edges in the result triangulation must be less than half of the max value of type (so e.g. 32767 for 16-bit numbers).
 
 Configuration:  
 The configuration allows you to customize even more parameters of the triangulation.
@@ -216,6 +216,9 @@ The collection must have the basic functions of a collection, e.g. `size()`, `re
 - `Allocator` - You can use a custom allocator instead of the default allocator (which uses the global `new` operator). More details about this in the "Custom allocators" section.
 - `UseRobustOrientationTests` - You can disable robust orientation tests if you don't need them, but this can cause triangulations to produce incorrect results (because of floating point inaccuracy).
 - `UseRobustIncircleTests` - Same as above, but for incircle tests (these are only used in delaunay triangulations).
+
+    **Important**: When using the robust tests, compiler flags for floating-point operation optimizations must be disabled (e.g. `-ffast-math` or `/fp:fast`).
+
 - `IndexChecks` - If enabled, then all user-provided indices are checked, and if anything is invalid (out-of-bounds or negative indices, or two consecutive duplicate indices), then an error is generated.  
 If disabled, then no checks are done, so if the input has any invalid indices, then it's undefined behavior (might crash).
 - `NaNChecks` - If enabled, then all the input points are checked, and if any of the points have a NaN or infinity value, then an error is generated.  
@@ -229,7 +232,7 @@ struct MyTriangulationConfig : public DefaultTriangulationConfig<detria::PointD>
 {
     using Allocator = MyCustomAllocatorType;
 
-    // the rest are used from the default configuration
+    // The rest are used from the default configuration
 }
 
 void doStuff()
@@ -249,7 +252,7 @@ You can use any point type:
 Let's say that we store points as `std::array<float, 2>`.
 Then we can define the following point adapter class:
 ```cpp
-// simple example
+// Simple example
 struct PointAdapterFromStdArray
 {
     static detria::Vec2<float> adapt(const std::array<float, 2>& point)
@@ -260,13 +263,13 @@ struct PointAdapterFromStdArray
 ```
 For better performance, you can also reinterpret your point class:
 ```cpp
-// more advanced example
+// More advanced example
 struct PointAdapterFromStdArrayWithReinterpret
 {
     inline static const detria::Vec2<float>& adapt(const std::array<float, 2>& point)
     {
-        // the types must have the same layout, and all kinds of that stuff
-        // only do this if you know what you're doing
+        // The types must have the same layout, and all kinds of that stuff
+        // Only do this if you know what you're doing
         return *reinterpret_cast<const detria::Vec2<float>*>(point.data());
     }
 };
@@ -281,7 +284,7 @@ The allocator class must have the following function:
 template <typename T>
 StlAllocator<T> createStlAllocator()
 {
-    // create C++ allocator for type `T`
+    // Create C++ allocator for type `T`
     return StlAllocator<T>();
 }
 ```

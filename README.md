@@ -33,9 +33,9 @@ Just include [`detria.hpp`](include/detria.hpp) in your project.
 Basic code example:
 
 ```cpp
-// create a square, and triangulate it
+// Create a square, and triangulate it
 
-// list of points (positions)
+// List of points (positions)
 std::vector<detria::PointD> points =
 {
     { 0.0, 0.0 },
@@ -44,7 +44,7 @@ std::vector<detria::PointD> points =
     { 0.0, 1.0 }
 };
 
-// list of point indices
+// List of point indices
 std::vector<uint32_t> outline = { 0, 1, 2, 3 };
 
 bool delaunay = true;

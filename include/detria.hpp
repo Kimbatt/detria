@@ -1538,13 +1538,13 @@ namespace detria
             // e20.nextEdge == e21
             // e21.prevEdge == e23
 
-            static constexpr Idx NullIndex = (Idx)-1;
+            static constexpr Idx NullIndex = Idx(-1);
 
             static constexpr bool collectionHasReserve = detail::HasReserve<Collection>::value;
 
             struct VertexIndex
             {
-                inline explicit VertexIndex(Idx index) : index(index)
+                inline explicit VertexIndex(Idx index_) : index(index_)
                 {
                 }
 
@@ -1564,7 +1564,7 @@ namespace detria
 
             struct HalfEdgeIndex
             {
-                inline explicit HalfEdgeIndex(Idx index) : index(index)
+                inline explicit HalfEdgeIndex(Idx index_) : index(index_)
                 {
                 }
 
@@ -1629,7 +1629,7 @@ namespace detria
 
             inline VertexIndex createVertex()
             {
-                Idx idx = (Idx)_vertices.size();
+                Idx idx = Idx(_vertices.size());
 
                 _vertices.emplace_back();
 
@@ -2214,7 +2214,7 @@ namespace detria
 
         struct TriangleIndex
         {
-            inline explicit TriangleIndex(Idx index) : index(index)
+            inline explicit TriangleIndex(Idx index_) : index(index_)
             {
             }
 
