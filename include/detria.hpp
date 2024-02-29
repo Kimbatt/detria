@@ -3911,29 +3911,26 @@ namespace detria
                     };
                 };
 
-                for (size_t i = 0; i < _topology.vertexCount(); ++i)
+                for (size_t i = 0; i < _topology.halfEdgeCount(); ++i)
                 {
-                    TVertex vertex = TVertex(Idx(i));
-
-                    _topology.forEachEdgeOfVertex(vertex, [&](THalfEdge e)
+                    if (checkedHalfEdges[i])
                     {
-                        if (checkedHalfEdges[size_t(e.index)])
-                        {
-                            // Edge already checked
-                            return;
-                        }
+                        // Edge already checked
+                        continue;
+                    }
 
-                        if (_topology.getEdgeData(e).isBoundary())
-                        {
-                            // Half-edge is boundary, don't add its triangle
-                            checkedHalfEdges[size_t(e.index)] = true;
-                            return;
-                        }
+                    THalfEdge edge = THalfEdge(Idx(i));
 
-                        TriangleIndex triangleIndex = TriangleIndex(Idx(_triangleData.size()));
-                        _resultTriangles.emplace_back(getTriangle(e, triangleIndex));
-                        _triangleData.emplace_back().firstEdge = e;
-                    });
+                    if (_topology.getEdgeData(edge).isBoundary())
+                    {
+                        // Half-edge is boundary, don't add its triangle
+                        checkedHalfEdges[i] = true;
+                        continue;
+                    }
+
+                    TriangleIndex triangleIndex = TriangleIndex(Idx(_triangleData.size()));
+                    _resultTriangles.emplace_back(getTriangle(edge, triangleIndex));
+                    _triangleData.emplace_back().firstEdge = edge;
                 }
             }
 
