@@ -1531,8 +1531,8 @@ namespace detria
             //        e02     e20
             //
             // v0.firstEdge == e01
-            // e01.opposite == e10
-            // e01.opposite.vertex == v1
+            // getOpposite(e01) == e10
+            // getOpposite(e01).vertex == v1
             // e01.nextEdge == e02
             // e01.prevEdge == e02
             // e20.nextEdge == e21
@@ -1592,7 +1592,6 @@ namespace detria
             struct HalfEdge
             {
                 VertexIndex vertex;
-                HalfEdgeIndex opposite;
                 HalfEdgeIndex prevEdge;
                 HalfEdgeIndex nextEdge;
 
@@ -1688,7 +1687,7 @@ namespace detria
 
             inline HalfEdgeIndex getOpposite(HalfEdgeIndex idx) const
             {
-                return getEdge(idx).opposite;
+                return HalfEdgeIndex(idx.index ^ 1);
             }
 
             inline HalfEdgeIndex getEdgeBetween(VertexIndex a, VertexIndex b) const
@@ -1717,11 +1716,12 @@ namespace detria
                 // Otherwise the new edge will be added as the first edge of the given vertex
                 // This function should only be called if there is no edge between the given vertices
 
-                auto addHalfEdge = [this](HalfEdgeIndex newEdgeIndex, HalfEdgeIndex opposite, VertexIndex vertex, HalfEdgeIndex afterEdge)
+                // Half edges are always created in pairs, which means that the opposite index can always be retrieved by xor-ing the edge index with 1
+
+                auto addHalfEdge = [this](HalfEdgeIndex newEdgeIndex, VertexIndex vertex, HalfEdgeIndex afterEdge)
                 {
                     HalfEdge newEdge{ };
 
-                    newEdge.opposite = opposite;
                     newEdge.vertex = vertex;
 
                     if (afterEdge.isValid())
@@ -1768,8 +1768,8 @@ namespace detria
                     newEdgeIndexB = HalfEdgeIndex(Idx(_edges.size() + 1));
                 }
 
-                HalfEdge newEdgeA = addHalfEdge(newEdgeIndexA, newEdgeIndexB, a, addAAfterThisEdge);
-                HalfEdge newEdgeB = addHalfEdge(newEdgeIndexB, newEdgeIndexA, b, addBAfterThisEdge);
+                HalfEdge newEdgeA = addHalfEdge(newEdgeIndexA, a, addAAfterThisEdge);
+                HalfEdge newEdgeB = addHalfEdge(newEdgeIndexB, b, addBAfterThisEdge);
 
                 if (reusedEdge)
                 {
@@ -1836,7 +1836,7 @@ namespace detria
                 // The first edge of the vertices will not be set correctly otherwise
 
                 HalfEdge& edge = getEdge(edgeIndex);
-                HalfEdge& opposite = getEdge(edge.opposite);
+                HalfEdge& opposite = getEdge(getOpposite(edgeIndex));
 
                 Vertex& v0 = getVertex(edge.vertex);
                 Vertex& v1 = getVertex(opposite.vertex);
@@ -1864,7 +1864,7 @@ namespace detria
 
                 // Setup all references
                 HalfEdge& edge = getEdge(edgeIndex);
-                HalfEdgeIndex oppositeIndex = edge.opposite;
+                HalfEdgeIndex oppositeIndex = getOpposite(edgeIndex);
                 HalfEdge& opposite = getEdge(oppositeIndex);
 
                 HalfEdgeIndex e01i = edge.prevEdge;
@@ -1876,10 +1876,10 @@ namespace detria
                 HalfEdge& e21 = getEdge(e21i);
                 HalfEdge& e23 = getEdge(e23i);
 
-                HalfEdgeIndex e10i = e01.opposite;
-                HalfEdgeIndex e30i = e03.opposite;
-                HalfEdgeIndex e12i = e21.opposite;
-                HalfEdgeIndex e32i = e23.opposite;
+                HalfEdgeIndex e10i = getOpposite(e01i);
+                HalfEdgeIndex e30i = getOpposite(e03i);
+                HalfEdgeIndex e12i = getOpposite(e21i);
+                HalfEdgeIndex e32i = getOpposite(e23i);
                 HalfEdge& e10 = getEdge(e10i);
                 HalfEdge& e30 = getEdge(e30i);
                 HalfEdge& e12 = getEdge(e12i);
@@ -2516,6 +2516,8 @@ namespace detria
             _constrainedEdgeVerticesCCW(allocator.template createStlAllocator<TVertex>()),
             _deletedConstrainedEdges(allocator.template createStlAllocator<THalfEdge>()),
             _constrainedEdgeReTriangulationStack(allocator.template createStlAllocator<TVertex>()),
+            _classifyTriangles_TrianglesByHalfEdgeIndex(allocator.template createStlAllocator<TriangleIndex>()),
+            _classifyTriangles_CheckedHalfEdges(allocator.template createStlAllocator<bool>()),
             _classifyTriangles_CheckedTriangles(allocator.template createStlAllocator<bool>()),
             _classifyTriangles_TrianglesToCheck(allocator.template createStlAllocator<TriangleIndex>()),
             _convexHullPoints(allocator),
@@ -2742,12 +2744,13 @@ namespace detria
         {
             _topology.clear();
             _resultTriangles.clear();
-            _triangleData.clear();
             _initialTriangulation_SortedPoints.clear();
             _constrainedEdgeVerticesCW.clear();
             _constrainedEdgeVerticesCCW.clear();
             _deletedConstrainedEdges.clear();
             _constrainedEdgeReTriangulationStack.clear();
+            _classifyTriangles_TrianglesByHalfEdgeIndex.clear();
+            _classifyTriangles_CheckedHalfEdges.clear();
             _classifyTriangles_CheckedTriangles.clear();
             _classifyTriangles_TrianglesToCheck.clear();
             _delaunayCheckStack.clear();
@@ -2841,8 +2844,8 @@ namespace detria
             Idx duplicatePointIndex1{ };
             std::sort(sortedPoints.begin(), sortedPoints.end(), [&](const Idx& idxA, const Idx& idxB)
             {
-                Vector2 a = _points[size_t(idxA)];
-                Vector2 b = _points[size_t(idxB)];
+                Vector2 a = adapt(_points[size_t(idxA)]);
+                Vector2 b = adapt(_points[size_t(idxB)]);
 
                 if (a.x != b.x)
                 {
@@ -3084,10 +3087,11 @@ namespace detria
                         : _topology.createNewEdge(pVertex, currentVertex, { }, edge0.prevEdge);
                     HalfEdge& edge1 = _topology.getEdge(edge1i);
 
-                    THalfEdge edge2i = _topology.createNewEdge(pVertex, nextVertex, edge1.prevEdge, edge0.opposite);
+                    THalfEdge oppositeEdge0i = _topology.getOpposite(edge0i);
+                    THalfEdge edge2i = _topology.createNewEdge(pVertex, nextVertex, edge1.prevEdge, oppositeEdge0i);
 
                     // Update boundary status
-                    _topology.getEdgeData(edge0.opposite).setBoundary(false); // Previously boundary edge, but it became interior now
+                    _topology.getEdgeData(oppositeEdge0i).setBoundary(false); // Previously boundary edge, but it became interior now
 
                     if (!lastAddedEdge.isValid())
                     {
@@ -3175,7 +3179,7 @@ namespace detria
             auto addEdgeToCheck = [&](THalfEdge e)
             {
                 HalfEdge& edge = _topology.getEdge(e);
-                HalfEdge& opposite = _topology.getEdge(edge.opposite);
+                HalfEdge& opposite = _topology.getEdge(_topology.getOpposite(e));
 
                 edge.data.setDelaunay(false);
                 opposite.data.setDelaunay(false);
@@ -3198,7 +3202,7 @@ namespace detria
 
                 THalfEdge e01 = edgeWithVertices.edge;
                 HalfEdge& edge01 = _topology.getEdge(e01);
-                HalfEdge& edge10 = _topology.getEdge(edge01.opposite);
+                HalfEdge& edge10 = _topology.getEdge(_topology.getOpposite(e01));
 
                 // Check if the edge still has the same vertices
                 if (edge01.vertex != edgeWithVertices.v0 || edge10.vertex != edgeWithVertices.v1) DETRIA_UNLIKELY
@@ -3394,11 +3398,11 @@ namespace detria
                 // If an edge is already an outline or hole, then check if the new type is the same
                 // If they are different, then it's an error
 
-                HalfEdge& currentEdge = _topology.getEdge(currentEdgeIndex);
+                EdgeData& currentEdgeData = _topology.getEdgeData(currentEdgeIndex);
 
                 constexpr std::array<uint8_t, size_t(EdgeType::MAX_EDGE_TYPE)> edgeTypePriorities = getConstrainedEdgeTypePriorities();
 
-                EdgeType currentEdgeType = currentEdge.data.getEdgeType();
+                EdgeType currentEdgeType = currentEdgeData.getEdgeType();
                 uint8_t currentPriority = edgeTypePriorities[size_t(currentEdgeType)];
                 uint8_t newPriority = edgeTypePriorities[size_t(constrainedEdgeType)];
 
@@ -3406,17 +3410,17 @@ namespace detria
                 {
                     // New edge type is higher priority, overwrite
 
-                    HalfEdge& oppositeEdge = _topology.getEdge(currentEdge.opposite);
+                    EdgeData& oppositeEdgeData = _topology.getEdgeData(_topology.getOpposite(currentEdgeIndex));
 
                     switch (constrainedEdgeType)
                     {
                         case EdgeType::ManuallyConstrained:
-                            currentEdge.data.data = oppositeEdge.data.data = typename EdgeData::ManuallyConstrainedEdgeTag{ };
+                            currentEdgeData.data = oppositeEdgeData.data = typename EdgeData::ManuallyConstrainedEdgeTag{ };
                             break;
                         case EdgeType::AutoDetect:
                         case EdgeType::Outline:
                         case EdgeType::Hole:
-                            currentEdge.data.data = oppositeEdge.data.data = typename EdgeData::OutlineOrHoleData
+                            currentEdgeData.data = oppositeEdgeData.data = typename EdgeData::OutlineOrHoleData
                             {
                                 .polylineIndex = polylineIndex,
                                 .type = constrainedEdgeType
@@ -3508,7 +3512,7 @@ namespace detria
             _deletedConstrainedEdges.pop_back();
 
             HalfEdge& constrainedEdge = _topology.getEdge(constrainedEdgeIndex);
-            HalfEdge& oppositeConstrainedEdge = _topology.getEdge(constrainedEdge.opposite);
+            HalfEdge& oppositeConstrainedEdge = _topology.getEdge(_topology.getOpposite(constrainedEdgeIndex));
 
             if (constrainedEdgeType == EdgeType::ManuallyConstrained)
             {
@@ -3555,10 +3559,9 @@ namespace detria
             _topology.forEachEdgeOfVertex(v0, [&](THalfEdge e)
             {
                 const HalfEdge& edge = _topology.getEdge(e);
-                const HalfEdge& nextEdge = _topology.getEdge(edge.nextEdge);
 
-                TVertex prevVertex = _topology.getEdge(nextEdge.opposite).vertex;
-                TVertex nextVertex = _topology.getEdge(edge.opposite).vertex;
+                TVertex prevVertex = _topology.getEdge(_topology.getOpposite(edge.nextEdge)).vertex;
+                TVertex nextVertex = _topology.getEdge(_topology.getOpposite(e)).vertex;
 
                 // We are looking for a triangle where "v0, v1, nextVertex" is ccw, and "v0, v1, prevVertex" is cw
 
@@ -3707,7 +3710,7 @@ namespace detria
                     {
                         vertexCW = thirdVertex;
                         verticesCW.push_back(thirdVertex);
-                        nextEdgeAcross = edgeOfThirdVertex.opposite;
+                        nextEdgeAcross = _topology.getOpposite(indexOfEdgeOfThirdVertex);
                     }
                     else
                     {
@@ -3869,7 +3872,6 @@ namespace detria
             }
 
             _resultTriangles.clear();
-            _triangleData.clear();
 
             // Euler characteristic: number of triangles == number of edges - number of vertices + 1
             // Since the outer "face" doesn't exist, only add 1 instead of 2
@@ -3878,67 +3880,68 @@ namespace detria
 
             // Create all triangles
 
-            CollectionWithAllocator<TriangleIndex> trianglesByHalfEdgeIndex(_allocator.template createStlAllocator<bool>());
-            trianglesByHalfEdgeIndex.resize(_topology.halfEdgeCount());
+            CollectionWithAllocator<TriangleIndex>& trianglesByHalfEdgeIndex = _classifyTriangles_TrianglesByHalfEdgeIndex;
+            trianglesByHalfEdgeIndex.clear();
+            trianglesByHalfEdgeIndex.resize(_topology.halfEdgeCount(), TriangleIndex{ });
 
+            CollectionWithAllocator<bool>& checkedHalfEdges = _classifyTriangles_CheckedHalfEdges;
+            checkedHalfEdges.clear();
+            checkedHalfEdges.resize(_topology.halfEdgeCount(), false);
+
+            for (size_t i = 0; i < _topology.halfEdgeCount(); ++i)
             {
-                CollectionWithAllocator<bool> checkedHalfEdges(_allocator.template createStlAllocator<bool>());
-                checkedHalfEdges.resize(_topology.halfEdgeCount(), false);
-
-                auto getTriangle = [&](THalfEdge edge, TriangleIndex triangleIndex)
+                if (checkedHalfEdges[i])
                 {
-                    const HalfEdge& e0 = _topology.getEdge(edge);
+                    // Edge already checked
+                    continue;
+                }
 
-                    THalfEdge e1i = _topology.getEdge(e0.opposite).prevEdge;
-                    const HalfEdge& e1 = _topology.getEdge(e1i);
+                THalfEdge edge = THalfEdge(Idx(i));
 
-                    THalfEdge e2i = _topology.getEdge(e1.opposite).prevEdge;
-                    const HalfEdge& e2 = _topology.getEdge(e2i);
+                if (_topology.getEdgeData(edge).isBoundary()) DETRIA_UNLIKELY
+                {
+                    // Half-edge is boundary, don't add its triangle
+                    checkedHalfEdges[i] = true;
+                    continue;
+                }
 
-                    checkedHalfEdges[size_t(edge.index)] = true;
-                    checkedHalfEdges[size_t(e1i.index)] = true;
-                    checkedHalfEdges[size_t(e2i.index)] = true;
+                TriangleIndex triangleIndex = TriangleIndex(Idx(_resultTriangles.size()));
 
-                    trianglesByHalfEdgeIndex[size_t(edge.index)] = triangleIndex;
-                    trianglesByHalfEdgeIndex[size_t(e1i.index)] = triangleIndex;
-                    trianglesByHalfEdgeIndex[size_t(e2i.index)] = triangleIndex;
+                const HalfEdge& e0 = _topology.getEdge(edge);
 
-                    return Tri
+                THalfEdge e1i = _topology.getEdge(_topology.getOpposite(edge)).prevEdge;
+                const HalfEdge& e1 = _topology.getEdge(e1i);
+
+                THalfEdge e2i = _topology.getEdge(_topology.getOpposite(e1i)).prevEdge;
+                const HalfEdge& e2 = _topology.getEdge(e2i);
+
+                checkedHalfEdges[i] = true;
+                checkedHalfEdges[size_t(e1i.index)] = true;
+                checkedHalfEdges[size_t(e2i.index)] = true;
+
+                trianglesByHalfEdgeIndex[i] = triangleIndex;
+                trianglesByHalfEdgeIndex[size_t(e1i.index)] = triangleIndex;
+                trianglesByHalfEdgeIndex[size_t(e2i.index)] = triangleIndex;
+
+                TriangleWithData& tri = _resultTriangles.emplace_back(TriangleWithData
+                {
+                    .triangle = Tri
                     {
                         .x = e0.vertex.index,
                         .y = e1.vertex.index,
                         .z = e2.vertex.index
-                    };
-                };
+                    },
+                    .data = { }
+                });
 
-                for (size_t i = 0; i < _topology.halfEdgeCount(); ++i)
-                {
-                    if (checkedHalfEdges[i])
-                    {
-                        // Edge already checked
-                        continue;
-                    }
-
-                    THalfEdge edge = THalfEdge(Idx(i));
-
-                    if (_topology.getEdgeData(edge).isBoundary())
-                    {
-                        // Half-edge is boundary, don't add its triangle
-                        checkedHalfEdges[i] = true;
-                        continue;
-                    }
-
-                    TriangleIndex triangleIndex = TriangleIndex(Idx(_triangleData.size()));
-                    _resultTriangles.emplace_back(getTriangle(edge, triangleIndex));
-                    _triangleData.emplace_back().firstEdge = edge;
-                }
+                tri.data.firstEdge = edge;
             }
 
             // Outer edge, only has one triangle
             TriangleIndex startingTriangle = trianglesByHalfEdgeIndex[size_t(startingConvexHullEdge.index)];
             DETRIA_ASSERT(startingTriangle.isValid());
 
-            _triangleData[startingTriangle.index].locationData = typename TriangleData::KnownLocationData
+            _resultTriangles[size_t(startingTriangle.index)].data.locationData = typename TriangleData::KnownLocationData
             {
                 // nullopt if the edge is not part of an outline or a hole
                 .parentPolylineIndex = startingEdgeData.getOutlineOrHoleIndex()
@@ -3974,7 +3977,7 @@ namespace detria
                 TriangleIndex currentTriangle = trianglesToCheck.back();
                 trianglesToCheck.pop_back();
 
-                const auto& currentTriangleData = _triangleData[size_t(currentTriangle.index)];
+                const auto& currentTriangleData = _resultTriangles[size_t(currentTriangle.index)].data;
                 const typename TriangleData::KnownLocationData* currentTriangleLocationData =
                     std::get_if<typename TriangleData::KnownLocationData>(&currentTriangleData.locationData);
 
@@ -3990,9 +3993,9 @@ namespace detria
                 for (Idx i = 0; i < 3; ++i)
                 {
                     THalfEdge edgeIndex = edgesOfCurrentTriangle[i];
-                    const HalfEdge& edge = _topology.getEdge(edgeIndex);
+                    const EdgeData& edgeData = _topology.getEdgeData(edgeIndex);
 
-                    TriangleIndex neighborTriangle = trianglesByHalfEdgeIndex[size_t(edge.opposite.index)];
+                    TriangleIndex neighborTriangle = trianglesByHalfEdgeIndex[size_t(_topology.getOpposite(edgeIndex).index)];
                     if (!neighborTriangle.isValid())
                     {
                         // The triangle is on the edge of the entire triangulation, so it does not have all 3 neighbors
@@ -4009,7 +4012,7 @@ namespace detria
 
                     std::optional<Idx> neighborTriangleParentPolylineIndex{ };
 
-                    if (std::optional<Idx> polylineIndex = edge.data.getOutlineOrHoleIndex())
+                    if (std::optional<Idx> polylineIndex = edgeData.getOutlineOrHoleIndex())
                     {
                         // Check which type of edge we just crossed (if this branch is entered, then it's part of either an outline or a hole)
                         // There are a few possibilites:
@@ -4089,7 +4092,7 @@ namespace detria
                         neighborTriangleParentPolylineIndex = currentTriangleLocationData->parentPolylineIndex;
                     }
 
-                    _triangleData[size_t(neighborTriangle.index)].locationData = typename TriangleData::KnownLocationData
+                    _resultTriangles[size_t(neighborTriangle.index)].data.locationData = typename TriangleData::KnownLocationData
                     {
                         .parentPolylineIndex = neighborTriangleParentPolylineIndex
                     };
@@ -4124,7 +4127,7 @@ namespace detria
         inline TriangleLocation getTriangleLocation(size_t triIndex) const
         {
             const typename TriangleData::KnownLocationData* data =
-                std::get_if<typename TriangleData::KnownLocationData>(&_triangleData[triIndex].locationData);
+                std::get_if<typename TriangleData::KnownLocationData>(&_resultTriangles[triIndex].data.locationData);
 
             if (data != nullptr)
             {
@@ -4138,7 +4141,7 @@ namespace detria
         template <bool Flip = false>
         inline Tri getTriangleOriginalIndices(size_t triIndex) const
         {
-            Tri tri = _resultTriangles[triIndex];
+            Tri tri = _resultTriangles[triIndex].triangle;
 
             if constexpr (Flip)
             {
@@ -4193,11 +4196,18 @@ namespace detria
         CollectionWithAllocator<TVertex> _constrainedEdgeVerticesCCW;
         CollectionWithAllocator<THalfEdge> _deletedConstrainedEdges;
         CollectionWithAllocator<TVertex> _constrainedEdgeReTriangulationStack;
+        CollectionWithAllocator<TriangleIndex> _classifyTriangles_TrianglesByHalfEdgeIndex;
+        CollectionWithAllocator<bool> _classifyTriangles_CheckedHalfEdges;
         CollectionWithAllocator<bool> _classifyTriangles_CheckedTriangles;
         CollectionWithAllocator<TriangleIndex> _classifyTriangles_TrianglesToCheck;
 
-        CollectionWithAllocator<Tri> _resultTriangles;
-        CollectionWithAllocator<TriangleData> _triangleData;
+        struct TriangleWithData
+        {
+            Tri triangle;
+            TriangleData data;
+        };
+
+        CollectionWithAllocator<TriangleWithData> _resultTriangles;
 
         // Results which are not related to the triangulation directly
         List _convexHullPoints;
