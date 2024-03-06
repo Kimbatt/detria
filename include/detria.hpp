@@ -1300,6 +1300,8 @@ namespace detria
         };
     }
 
+#define DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(collection) collection(allocator.template createStlAllocator<typename decltype(collection)::value_type>())
+
     namespace detail
     {
         // Simple zero-sized struct
@@ -1319,8 +1321,8 @@ namespace detria
             };
 
             FlatLinkedList(Allocator allocator) :
-                _nodes(allocator.template createStlAllocator<Node>()),
-                _free(allocator.template createStlAllocator<Idx>())
+                DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_nodes),
+                DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_free)
             {
             }
 
@@ -1599,8 +1601,8 @@ namespace detria
             };
 
             Topology(Allocator allocator) :
-                _vertices(allocator.template createStlAllocator<Vertex>()),
-                _edges(allocator.template createStlAllocator<HalfEdge>())
+                DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_vertices),
+                DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_edges)
             {
             }
 
@@ -2079,7 +2081,6 @@ namespace detria
         static constexpr bool collectionHasReserve = detail::HasReserve<Collection>::value;
 
         using Tri = Triangle<Idx>;
-        using Edge_ = Edge<Idx>;
 
         enum class EdgeType : uint8_t
         {
@@ -2507,22 +2508,22 @@ namespace detria
         Triangulation(Allocator allocator = { }) :
             _allocator(allocator),
             _points(),
-            _polylines(allocator.template createStlAllocator<PolylineData>()),
-            _manuallyConstrainedEdges(allocator.template createStlAllocator<Vec2<Idx>>()),
-            _autoDetectedPolylineTypes(allocator.template createStlAllocator<EdgeType>()),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_polylines),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_manuallyConstrainedEdges),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_autoDetectedPolylineTypes),
             _topology(allocator),
-            _initialTriangulation_SortedPoints(allocator.template createStlAllocator<Idx>()),
-            _constrainedEdgeVerticesCW(allocator.template createStlAllocator<TVertex>()),
-            _constrainedEdgeVerticesCCW(allocator.template createStlAllocator<TVertex>()),
-            _deletedConstrainedEdges(allocator.template createStlAllocator<THalfEdge>()),
-            _constrainedEdgeReTriangulationStack(allocator.template createStlAllocator<TVertex>()),
-            _classifyTriangles_TrianglesByHalfEdgeIndex(allocator.template createStlAllocator<TriangleIndex>()),
-            _classifyTriangles_CheckedHalfEdges(allocator.template createStlAllocator<bool>()),
-            _classifyTriangles_CheckedTriangles(allocator.template createStlAllocator<bool>()),
-            _classifyTriangles_TrianglesToCheck(allocator.template createStlAllocator<TriangleIndex>()),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_initialTriangulation_SortedPoints),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_constrainedEdgeVerticesCW),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_constrainedEdgeVerticesCCW),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_deletedConstrainedEdges),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_constrainedEdgeReTriangulationStack),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_classifyTriangles_TrianglesByHalfEdgeIndex),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_classifyTriangles_CheckedHalfEdges),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_classifyTriangles_CheckedTriangles),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_classifyTriangles_TrianglesToCheck),
             _convexHullPoints(allocator),
-            _parentPolylines(allocator.template createStlAllocator<std::optional<Idx>>()),
-            _delaunayCheckStack(allocator.template createStlAllocator<Edge_>())
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_parentPolylines),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_delaunayCheckStack)
         {
         }
 
@@ -3876,7 +3877,11 @@ namespace detria
             // Euler characteristic: number of triangles == number of edges - number of vertices + 1
             // Since the outer "face" doesn't exist, only add 1 instead of 2
             size_t expectedTriangleCount = 1 + _topology.halfEdgeCount() / 2 - _topology.vertexCount();
-            _resultTriangles.reserve(expectedTriangleCount);
+
+            if constexpr (collectionHasReserve)
+            {
+                _resultTriangles.reserve(expectedTriangleCount);
+            }
 
             // Create all triangles
 
@@ -4226,6 +4231,7 @@ namespace detria
         TriangulationErrorData _error = TE_NotStarted{ };
     };
 
+#undef DETRIA_INIT_COLLECTION_WITH_ALLOCATOR
 #undef DETRIA_CHECK
 #undef DETRIA_ASSERT
 #undef DETRIA_ASSERT_MSG
