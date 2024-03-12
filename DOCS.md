@@ -214,6 +214,12 @@ The configuration allows you to customize even more parameters of the triangulat
 - `Collection` - You can use a custom collection instead of `std::vector`, if you need to.  
 The collection must have the basic functions of a collection, e.g. `size()`, `resize()`, indexing operator, etc.
 - `Allocator` - You can use a custom allocator instead of the default allocator (which uses the global `new` operator). More details about this in the "Custom allocators" section.
+- `Sorter` - You can use a custom sorting algorithm (which will be used to sort the points in the initial triangulation step). The provided sorter class must have a function with the following signature:
+    ```cpp
+    template <typename Iter, typename Cmp>
+    static void sort(Iter begin, Iter end, Cmp comparer);
+    ```
+    (This is the same signature as `std::sort` with a custom comparer)
 - `UseRobustOrientationTests` - You can disable robust orientation tests if you don't need them, but this can cause triangulations to produce incorrect results (because of floating point inaccuracy).
 - `UseRobustIncircleTests` - Same as above, but for incircle tests (these are only used in delaunay triangulations).
 

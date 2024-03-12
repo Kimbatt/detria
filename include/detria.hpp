@@ -48,7 +48,6 @@ if (success)
 
 #include <vector>
 #include <array>
-#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <type_traits>
@@ -1409,7 +1408,7 @@ namespace detria
 
         inline bool detriaAssert(bool condition, const char* message)
         {
-            if (condition)
+            if (condition) DETRIA_LIKELY
             {
                 return true;
             }
@@ -1485,6 +1484,152 @@ namespace detria
         private:
             const T* _ptr;
             size_t _count;
+        };
+
+        template <typename T, size_t MaxSize>
+        struct FixedSizeStack
+        {
+            inline void push(T elem)
+            {
+#ifndef NDEBUG
+                detriaAssert(_size < MaxSize);
+#endif
+                _stack[_size++] = elem;
+            }
+
+            inline T pop()
+            {
+#ifndef NDEBUG
+                detriaAssert(_size != 0);
+#endif
+                return _stack[--_size];
+            }
+
+            inline bool empty() const
+            {
+                return _size == 0;
+            }
+
+        private:
+            std::array<T, MaxSize> _stack;
+            size_t _size = 0;
+        };
+
+        struct DefaultSorter
+        {
+            template <typename Iter, typename Cmp>
+            inline static void sort(Iter begin_, Iter end_, Cmp cmp)
+            {
+                using Ty = typename Iter::value_type;
+                using Diff = std::ptrdiff_t;
+
+                constexpr Diff insertionSortThreshold = 48;
+
+                // Store sort ranges in a fixed-size stack to avoid recursion
+
+                constexpr size_t sizeInBits = sizeof(Diff) * 8;
+                constexpr size_t maxStackSize = sizeInBits * 2 + 2;
+
+                using StackElement = std::pair<Diff, Diff>;
+                FixedSizeStack<StackElement, maxStackSize> stack;
+
+                stack.push(std::make_pair(0, std::distance(begin_, end_)));
+
+                while (!stack.empty())
+                {
+                    auto [beginIndex, endIndex] = stack.pop();
+                    Iter begin = std::next(begin_, beginIndex);
+                    Iter end = std::next(begin_, endIndex);
+
+                    Diff count = std::distance(begin, end);
+                    if (count < insertionSortThreshold)
+                    {
+                        if (count >= 2)
+                        {
+                            insertionSort(begin, end, cmp);
+                        }
+
+                        continue;
+                    }
+
+                    // Find a good pivot
+
+                    std::array<Ty, 5> possiblePivotValues{ };
+                    possiblePivotValues[0] = *begin;
+                    possiblePivotValues[1] = *std::next(begin, count / 4 * 1);
+                    possiblePivotValues[2] = *std::next(begin, count / 4 * 2);
+                    possiblePivotValues[3] = *std::next(begin, count / 4 * 3);
+                    possiblePivotValues[4] = *std::prev(end);
+
+                    insertionSort(possiblePivotValues.begin(), possiblePivotValues.end(), cmp);
+                    Ty pivotValue = possiblePivotValues[2];
+
+                    // Partition
+                    // Using branchless Lomuto partitioning - https://orlp.net/blog/branchless-lomuto-partitioning/
+
+                    Ty temp = *begin;
+                    Diff otherIndex = 0;
+                    for (Diff i = 0; i < count - 1; ++i)
+                    {
+                        Iter current = std::next(begin, i);
+                        Iter other = std::next(begin, otherIndex);
+                        *current = *other;
+                        *other = *std::next(current);
+                        bool cmpResult = cmp(*other, pivotValue);
+                        otherIndex += cmpResult ? 1 : 0;
+                    }
+
+                    Iter other2 = std::next(begin, otherIndex);
+                    *std::prev(end) = *other2;
+                    *other2 = temp;
+
+                    Diff pivotIndex = beginIndex + otherIndex + (cmp(temp, pivotValue) ? 1 : 0);
+
+                    // Add partitioned ranges to the stack
+                    // Add the longer range first, so the shorter range is processed first, which ensures that the stack is always large enough
+
+                    std::pair firstRange = std::make_pair(beginIndex, pivotIndex);
+                    std::pair secondRange = std::make_pair(pivotIndex, endIndex);
+                    if (pivotIndex - beginIndex < endIndex - pivotIndex)
+                    {
+                        stack.push(secondRange);
+                        stack.push(firstRange);
+                    }
+                    else
+                    {
+                        stack.push(firstRange);
+                        stack.push(secondRange);
+                    }
+                }
+            }
+
+        private:
+            template <typename Iter, typename Cmp>
+            inline static void insertionSort(Iter begin, Iter end, Cmp cmp)
+            {
+                using Diff = std::ptrdiff_t;
+
+                // Assume that there are at least two elements
+                // This is checked before calling this function
+                Diff count = std::distance(begin, end);
+
+                for (Diff i = 0; i < count - 1; ++i)
+                {
+                    for (Diff j = i + 1; j > 0; --j)
+                    {
+                        Iter a = std::next(begin, j - 1);
+                        Iter b = std::next(begin, j);
+                        if (!cmp(*a, *b))
+                        {
+                            std::swap(*a, *b);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
         };
 
         // Helper to decide if a type has a `reserve` function
@@ -2037,6 +2182,15 @@ namespace detria
         template <typename T, typename Allocator>
         using Collection = std::vector<T, Allocator>;
 
+        // Custom sorting algorithm.
+        // To use a different algorithm, use a class which has a function with the following signature:
+        /*
+        template <typename Iter, typename Cmp>
+        static void sort(Iter begin, Iter end, Cmp comparer);
+        */
+        // This signature is equivalent to `std::sort` with a custom comparer.
+        using Sorter = detail::DefaultSorter;
+
         // Robust orientation and incircle tests guarantee correct results, even if the points are nearly collinear or cocircular.
         // Incircle tests are only used in delaunay triangulations.
         constexpr static bool UseRobustOrientationTests = true;
@@ -2521,6 +2675,7 @@ namespace detria
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_classifyTriangles_CheckedHalfEdges),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_classifyTriangles_CheckedTriangles),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_classifyTriangles_TrianglesToCheck),
+            DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_resultTriangles),
             _convexHullPoints(allocator),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_parentPolylines),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_delaunayCheckStack)
@@ -2840,53 +2995,33 @@ namespace detria
             // If there are two points (or more) that have the same x and y coordinate, then we can't triangulate it,
             // because it would create degenerate triangles
 
-            bool hasDuplicatePoints = false;
-            Idx duplicatePointIndex0{ };
-            Idx duplicatePointIndex1{ };
-            std::sort(sortedPoints.begin(), sortedPoints.end(), [&](const Idx& idxA, const Idx& idxB)
+            Config::Sorter::sort(sortedPoints.begin(), sortedPoints.end(), [&](const Idx& idxA, const Idx& idxB)
             {
                 Vector2 a = adapt(_points[size_t(idxA)]);
                 Vector2 b = adapt(_points[size_t(idxB)]);
-
-                if (a.x != b.x)
-                {
-                    return a.x < b.x;
-                }
-                else
-                {
-                    if (a.y != b.y)
-                    {
-                        return a.y < b.y;
-                    }
-                    else
-                    {
-                        // For some reason, when using emscripten, std::sort sometimes compares the same value with itself
-                        // So in that case, don't fail, just return false
-
-                        if (idxA != idxB)
-                        {
-                            hasDuplicatePoints = true;
-                            duplicatePointIndex0 = idxA;
-                            duplicatePointIndex1 = idxB;
-                        }
-
-                        return false;
-                    }
-                }
+                bool differentX = a.x != b.x;
+                return differentX ? a.x < b.x : a.y < b.y;
             });
 
-            if (hasDuplicatePoints)
+            // Since the points are sorted, duplicates must be next to each other (if any)
+            for (size_t i = 1; i < sortedPoints.size(); ++i)
             {
-                const Idx& idx0 = sortedPoints[duplicatePointIndex0];
-                Vector2 point = adapt(_points[size_t(idx0)]);
+                Idx prevIndex = sortedPoints[i - 1];
+                Idx currentIndex = sortedPoints[i];
 
-                return fail(TE_DuplicatePointsFound
+                Vector2 prev = adapt(_points[prevIndex]);
+                Vector2 current = adapt(_points[currentIndex]);
+
+                if (prev.x == current.x && prev.y == current.y) DETRIA_UNLIKELY
                 {
-                    .positionX = point.x,
-                    .positionY = point.y,
-                    .idx0 = duplicatePointIndex0,
-                    .idx1 = duplicatePointIndex1
-                });
+                    return fail(TE_DuplicatePointsFound
+                    {
+                        .positionX = current.x,
+                        .positionY = current.y,
+                        .idx0 = prevIndex,
+                        .idx1 = currentIndex
+                    });
+                }
             }
 
             // Find an initial triangle
