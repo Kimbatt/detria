@@ -50,6 +50,7 @@ if (success)
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 #include <optional>
 #include <variant>
@@ -123,8 +124,8 @@ namespace detria
         // In this case, a custom adapter must be created, see the comment above
         using Scalar = decltype(Point::x);
 
-        // If you get an error here, then it's likely that the type of 'x' in your Point class is not a float/double
-        static_assert(std::is_floating_point_v<Scalar>, "The Point type's x and y fields must be floating point type");
+        // If you get an error here, then it's likely that the type of 'x' in your Point class is not a number type
+        static_assert(std::is_arithmetic_v<Scalar>, "The Point type's x and y fields must be number types");
 
         // If you get an error here, then it's likely that the type of 'x' and 'y' in your Point class are different
         // (for example, if 'x' is float, then 'y' also must be a float, not a double)
@@ -493,58 +494,6 @@ namespace detria
             Dlength = fast_expansion_sum_zeroelim(C2length, C2, 4, u, D);
 
             return(D[Dlength - 1]);
-        }
-
-        template <bool Robust, typename Scalar>
-        inline Scalar orient2d(Scalar pa[2], Scalar pb[2], Scalar pc[2])
-        {
-            Scalar detsum = Scalar(0);
-
-            Scalar detleft = (pa[0] - pc[0]) * (pb[1] - pc[1]);
-            Scalar detright = (pa[1] - pc[1]) * (pb[0] - pc[0]);
-            Scalar det = detleft - detright;
-
-            if constexpr (Robust)
-            {
-                if (detleft > Scalar(0))
-                {
-                    if (detright <= Scalar(0))
-                    {
-                        return det;
-                    }
-                    else
-                    {
-                        detsum = detleft + detright;
-                    }
-                }
-                else if (detleft < Scalar(0))
-                {
-                    if (detright >= Scalar(0))
-                    {
-                        return det;
-                    }
-                    else
-                    {
-                        detsum = -detleft - detright;
-                    }
-                }
-                else
-                {
-                    return det;
-                }
-
-                Scalar errbound = errorBounds<Scalar>.ccwerrboundA * detsum;
-                if (Absolute(det) >= errbound) DETRIA_LIKELY
-                {
-                    return det;
-                }
-
-                return orient2dadapt(pa, pb, pc, detsum);
-            }
-            else
-            {
-                return det;
-            }
         }
 
         template <typename Scalar>
@@ -1128,49 +1077,6 @@ namespace detria
             return finnow[finlength - 1];
         }
 
-        template <bool Robust, typename Scalar>
-        inline Scalar incircle(Scalar pa[2], Scalar pb[2], Scalar pc[2], Scalar pd[2])
-        {
-            Scalar adx = pa[0] - pd[0];
-            Scalar bdx = pb[0] - pd[0];
-            Scalar cdx = pc[0] - pd[0];
-            Scalar ady = pa[1] - pd[1];
-            Scalar bdy = pb[1] - pd[1];
-            Scalar cdy = pc[1] - pd[1];
-
-            Scalar bdxcdy = bdx * cdy;
-            Scalar cdxbdy = cdx * bdy;
-            Scalar alift = adx * adx + ady * ady;
-
-            Scalar cdxady = cdx * ady;
-            Scalar adxcdy = adx * cdy;
-            Scalar blift = bdx * bdx + bdy * bdy;
-
-            Scalar adxbdy = adx * bdy;
-            Scalar bdxady = bdx * ady;
-            Scalar clift = cdx * cdx + cdy * cdy;
-
-            Scalar det = alift * (bdxcdy - cdxbdy) + blift * (cdxady - adxcdy) + clift * (adxbdy - bdxady);
-            if constexpr (Robust)
-            {
-                Scalar permanent = (Absolute(bdxcdy) + Absolute(cdxbdy)) * alift
-                    + (Absolute(cdxady) + Absolute(adxcdy)) * blift
-                    + (Absolute(adxbdy) + Absolute(bdxady)) * clift;
-
-                Scalar errbound = errorBounds<Scalar>.iccerrboundA * permanent;
-                if (Absolute(det) > errbound) DETRIA_LIKELY
-                {
-                    return det;
-                }
-
-                return incircleadapt(pa, pb, pc, pd, permanent);
-            }
-            else
-            {
-                return det;
-            }
-        }
-
 #undef DETRIA_INEXACT
 #undef DETRIA_Fast_Two_Sum_Tail
 #undef DETRIA_Fast_Two_Sum
@@ -1199,6 +1105,54 @@ namespace detria
 
     namespace math
     {
+#ifndef NDEBUG
+        // Debug functions for integer overflow checking (from https://stackoverflow.com/a/1514309)
+
+        template <typename Scalar>
+        inline constexpr bool checkOverflowAdd(const Scalar& a, const Scalar& b)
+        {
+            if constexpr (std::is_floating_point_v<Scalar>)
+            {
+                return false;
+            }
+            else
+            {
+                return b > Scalar(0) && a > std::numeric_limits<Scalar>::max() - b
+                    || b < Scalar(0) && a < std::numeric_limits<Scalar>::min() - b;
+            }
+        }
+
+        template <typename Scalar>
+        inline constexpr bool checkOverflowSubtract(const Scalar& a, const Scalar& b)
+        {
+            if constexpr (std::is_floating_point_v<Scalar>)
+            {
+                return false;
+            }
+            else
+            {
+                return b < Scalar(0) && a > std::numeric_limits<Scalar>::max() + b
+                    || b > Scalar(0) && a < std::numeric_limits<Scalar>::min() + b;
+            }
+        }
+
+        template <typename Scalar>
+        inline constexpr bool checkOverflowMultiply(const Scalar& a, const Scalar& b)
+        {
+            if constexpr (std::is_floating_point_v<Scalar>)
+            {
+                return false;
+            }
+            else
+            {
+                return a > 0 && b > 0 && a > std::numeric_limits<Scalar>::max() / b
+                    || a > 0 && b < 0 && b < std::numeric_limits<Scalar>::min() / a
+                    || a < 0 && b > 0 && a < std::numeric_limits<Scalar>::min() / b
+                    || a < 0 && b < 0 && b < std::numeric_limits<Scalar>::max() / a;
+            }
+        }
+#endif
+
         enum class Orientation : uint8_t
         {
             CW = 0, CCW = 1, Collinear = 2
@@ -1207,16 +1161,93 @@ namespace detria
         template <bool Robust, typename Vec2>
         inline Orientation orient2d(const Vec2& a, const Vec2& b, const Vec2& c)
         {
-            using Scalar = decltype(Vec2::x);
-            Scalar pa[2]{ a.x, a.y };
-            Scalar pb[2]{ b.x, b.y };
-            Scalar pc[2]{ c.x, c.y };
-            Scalar result = predicates::orient2d<Robust, Scalar>(pa, pb, pc);
-            if (result < Scalar(0))
+            // The robust tests are only required for floating point types
+            // For floating point types, VecComponent is always the same type as Scalar, so no actual conversions happen
+            // For integer types, the values are converted to 64-bit signed integers, which can avoid overflows
+
+            using VecComponent = decltype(Vec2::x);
+            constexpr bool IsInteger = std::is_integral_v<VecComponent>;
+            using Scalar = std::conditional_t<IsInteger, int64_t, VecComponent>;
+
+            Scalar pa0 = static_cast<Scalar>(a.x);
+            Scalar pa1 = static_cast<Scalar>(a.y);
+            Scalar pb0 = static_cast<Scalar>(b.x);
+            Scalar pb1 = static_cast<Scalar>(b.y);
+            Scalar pc0 = static_cast<Scalar>(c.x);
+            Scalar pc1 = static_cast<Scalar>(c.y);
+
+#ifndef NDEBUG
+            detail::detriaAssert(
+                !checkOverflowSubtract(pa0, pc0) &&
+                !checkOverflowSubtract(pb1, pc1) &&
+                !checkOverflowSubtract(pa1, pc1) &&
+                !checkOverflowSubtract(pb0, pc0) &&
+                !checkOverflowMultiply(pa0 - pc0, pb1 - pc1) &&
+                !checkOverflowMultiply(pa1 - pc1, pb0 - pc0) &&
+                !checkOverflowSubtract((pa0 - pc0) * (pb1 - pc1), (pa1 - pc1) * (pb0 - pc0)),
+                "Integer overflow"
+            );
+#endif
+
+            Scalar detleft = (pa0 - pc0) * (pb1 - pc1);
+            Scalar detright = (pa1 - pc1) * (pb0 - pc0);
+            Scalar det = detleft - detright;
+
+            det = [&]()
+            {
+                if constexpr (Robust && !IsInteger)
+                {
+                    Scalar detsum = Scalar(0);
+
+                    if (detleft > Scalar(0))
+                    {
+                        if (detright <= Scalar(0))
+                        {
+                            return det;
+                        }
+                        else
+                        {
+                            detsum = detleft + detright;
+                        }
+                    }
+                    else if (detleft < Scalar(0))
+                    {
+                        if (detright >= Scalar(0))
+                        {
+                            return det;
+                        }
+                        else
+                        {
+                            detsum = -detleft - detright;
+                        }
+                    }
+                    else
+                    {
+                        return det;
+                    }
+
+                    Scalar errbound = predicates::errorBounds<Scalar>.ccwerrboundA * detsum;
+                    if (predicates::Absolute(det) >= errbound) DETRIA_LIKELY
+                    {
+                        return det;
+                    }
+
+                    Scalar pa[2]{ a.x, a.y };
+                    Scalar pb[2]{ b.x, b.y };
+                    Scalar pc[2]{ c.x, c.y };
+                    return predicates::orient2dadapt(pa, pb, pc, detsum);
+                }
+                else
+                {
+                    return det;
+                }
+            }();
+
+            if (det < Scalar(0))
             {
                 return Orientation::CW;
             }
-            else if (result > Scalar(0))
+            else if (det > Scalar(0))
             {
                 return Orientation::CCW;
             }
@@ -1239,17 +1270,123 @@ namespace detria
             detail::detriaAssert(math::orient2d<Robust, Vec2>(a, b, c) == math::Orientation::CCW);
 #endif
 
-            using Scalar = decltype(Vec2::x);
-            Scalar pa[2]{ a.x, a.y };
-            Scalar pb[2]{ b.x, b.y };
-            Scalar pc[2]{ c.x, c.y };
-            Scalar pd[2]{ d.x, d.y };
-            Scalar result = predicates::incircle<Robust, Scalar>(pa, pb, pc, pd);
-            if (result > Scalar(0))
+            // See comments in orient2d for additional info about integer types
+
+            using VecComponent = decltype(Vec2::x);
+            constexpr bool IsInteger = std::is_integral_v<VecComponent>;
+            using Scalar = std::conditional_t<IsInteger, int64_t, VecComponent>;
+
+            Scalar pa0 = static_cast<Scalar>(a.x);
+            Scalar pa1 = static_cast<Scalar>(a.y);
+            Scalar pb0 = static_cast<Scalar>(b.x);
+            Scalar pb1 = static_cast<Scalar>(b.y);
+            Scalar pc0 = static_cast<Scalar>(c.x);
+            Scalar pc1 = static_cast<Scalar>(c.y);
+            Scalar pd0 = static_cast<Scalar>(d.x);
+            Scalar pd1 = static_cast<Scalar>(d.y);
+
+#ifndef NDEBUG
+            detail::detriaAssert(
+                !checkOverflowSubtract(pa0, pd0) &&
+                !checkOverflowSubtract(pb0, pd0) &&
+                !checkOverflowSubtract(pc0, pd0) &&
+                !checkOverflowSubtract(pa1, pd1) &&
+                !checkOverflowSubtract(pb1, pd1) &&
+                !checkOverflowSubtract(pc1, pd1),
+                "Integer overflow"
+            );
+#endif
+
+            Scalar adx = pa0 - pd0;
+            Scalar bdx = pb0 - pd0;
+            Scalar cdx = pc0 - pd0;
+            Scalar ady = pa1 - pd1;
+            Scalar bdy = pb1 - pd1;
+            Scalar cdy = pc1 - pd1;
+
+#ifndef NDEBUG
+            detail::detriaAssert(
+                !checkOverflowMultiply(bdx, cdy) &&
+                !checkOverflowMultiply(cdx, bdy) &&
+                !checkOverflowMultiply(adx, adx) &&
+                !checkOverflowMultiply(ady, ady) &&
+                !checkOverflowAdd(adx * adx, ady * ady) &&
+
+                !checkOverflowMultiply(cdx, ady) &&
+                !checkOverflowMultiply(adx, cdy) &&
+                !checkOverflowMultiply(bdx, bdx) &&
+                !checkOverflowMultiply(bdy, bdy) &&
+                !checkOverflowAdd(bdx * bdx, bdy * bdy) &&
+
+                !checkOverflowMultiply(adx, bdy) &&
+                !checkOverflowMultiply(bdx, ady) &&
+                !checkOverflowMultiply(cdx, cdx) &&
+                !checkOverflowMultiply(cdy, cdy) &&
+                !checkOverflowAdd(cdx * cdx, cdy * cdy),
+                "Integer overflow"
+            );
+#endif
+
+            Scalar bdxcdy = bdx * cdy;
+            Scalar cdxbdy = cdx * bdy;
+            Scalar alift = adx * adx + ady * ady;
+
+            Scalar cdxady = cdx * ady;
+            Scalar adxcdy = adx * cdy;
+            Scalar blift = bdx * bdx + bdy * bdy;
+
+            Scalar adxbdy = adx * bdy;
+            Scalar bdxady = bdx * ady;
+            Scalar clift = cdx * cdx + cdy * cdy;
+
+#ifndef NDEBUG
+            detail::detriaAssert(
+                !checkOverflowSubtract(bdxcdy, cdxbdy) &&
+                !checkOverflowSubtract(cdxady, adxcdy) &&
+                !checkOverflowSubtract(adxbdy, bdxady) &&
+                !checkOverflowMultiply(alift, bdxcdy - cdxbdy) &&
+                !checkOverflowMultiply(blift, cdxady - adxcdy) &&
+                !checkOverflowMultiply(clift, adxbdy - bdxady) &&
+                !checkOverflowAdd(alift * (bdxcdy - cdxbdy), blift * (cdxady - adxcdy)) &&
+                !checkOverflowAdd(alift * (bdxcdy - cdxbdy) + blift * (cdxady - adxcdy), clift * (adxbdy - bdxady)),
+                "Integer overflow"
+            );
+#endif
+
+            Scalar det = alift * (bdxcdy - cdxbdy) + blift * (cdxady - adxcdy) + clift * (adxbdy - bdxady);
+
+            det = [&]()
+            {
+                if constexpr (Robust && !IsInteger)
+                {
+                    Scalar permanent = 
+                        (predicates::Absolute(bdxcdy) + predicates::Absolute(cdxbdy)) * alift +
+                        (predicates::Absolute(cdxady) + predicates::Absolute(adxcdy)) * blift +
+                        (predicates::Absolute(adxbdy) + predicates::Absolute(bdxady)) * clift;
+
+                    Scalar errbound = predicates::errorBounds<Scalar>.iccerrboundA * permanent;
+                    if (predicates::Absolute(det) > errbound) DETRIA_LIKELY
+                    {
+                        return det;
+                    }
+
+                    Scalar pa[2]{ a.x, a.y };
+                    Scalar pb[2]{ b.x, b.y };
+                    Scalar pc[2]{ c.x, c.y };
+                    Scalar pd[2]{ d.x, d.y };
+                    return predicates::incircleadapt(pa, pb, pc, pd, permanent);
+                }
+                else
+                {
+                    return det;
+                }
+            }();
+
+            if (det > Scalar(0))
             {
                 return CircleLocation::Inside;
             }
-            else if (result < Scalar(0))
+            else if (det < Scalar(0))
             {
                 return CircleLocation::Outside;
             }
@@ -1590,7 +1727,17 @@ namespace detria
 
                     std::pair firstRange = std::make_pair(beginIndex, pivotIndex);
                     std::pair secondRange = std::make_pair(pivotIndex, endIndex);
-                    if (pivotIndex - beginIndex < endIndex - pivotIndex)
+                    Diff firstRangeSize = pivotIndex - beginIndex;
+                    Diff secondRangeSize = endIndex - pivotIndex;
+
+                    if (firstRangeSize == 0 || secondRangeSize == 0) DETRIA_UNLIKELY
+                    {
+                        // When all values are equal (the comparer returns the same value for all elements), then one of the ranges can become empty
+                        // This means that the values are already sorted
+                        continue;
+                    }
+
+                    if (firstRangeSize < secondRangeSize)
                     {
                         stack.push(secondRange);
                         stack.push(firstRange);
@@ -2446,7 +2593,13 @@ namespace detria
             std::string getErrorMessage() const
             {
                 std::stringstream ss;
-                ss << (std::isnan(value) ? "NaN" : "Infinite") << " value found at point index " << index;
+
+                // This error can only happen with floating point types
+                if constexpr (std::is_floating_point_v<Scalar>)
+                {
+                    ss << (std::isnan(value) ? "NaN" : "Infinite") << " value found at point index " << index;
+                }
+
                 return ss.str();
             }
 
@@ -2929,7 +3082,7 @@ namespace detria
                 return fail(TE_LessThanThreePoints{ });
             }
 
-            if constexpr (Config::NaNChecks)
+            if constexpr (Config::NaNChecks && std::is_floating_point_v<Scalar>)
             {
                 // Check NaN / inf values
                 for (size_t i = 0; i < _points.size(); ++i)

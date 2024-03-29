@@ -83,7 +83,6 @@ All floating point calculations are handled by either:
 
 ## Future improvements
 These might be added in the future:
-- Support for integer point coordinates
 - User-defined edge flip conditions (e.g. flip based on edge lengths, triangle aspect ratios, etc.)
 - Support for older C++ versions (C++11 maybe, probably not C++98 though)
 - Performance improvements

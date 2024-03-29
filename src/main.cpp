@@ -65,6 +65,18 @@ bool StringToScalar(const std::string& str, Scalar& result)
             return false;
         }
     }
+    else if constexpr (std::is_integral_v<Scalar>)
+    {
+        try
+        {
+            result = Scalar(std::stoll(str));
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
     else
     {
         return false;
@@ -318,6 +330,24 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
     return true;
 }
 
+template <typename Point>
+std::vector<detria::Vec2<int>> getIntegerPoints(const std::vector<Point>& points)
+{
+    std::vector<detria::Vec2<int>> resultPoints;
+    resultPoints.reserve(points.size());
+
+    for (const Point& p : points)
+    {
+        resultPoints.emplace_back(detria::Vec2<int>
+        {
+            .x = int(p.x),
+            .y = int(p.y)
+        });
+    }
+
+    return resultPoints;
+}
+
 template <typename Point, typename Idx>
 bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::path& exportFolder,
     const std::vector<Point>& points, const std::vector<Polyline<Idx>>& polylines, const std::vector<std::pair<Idx, Idx>>& manuallyConstrainedEdges)
@@ -353,6 +383,9 @@ bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::p
     bool success = tri.triangulate(true);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
+    constexpr bool integerCoordinates = std::is_integral_v<decltype(Point::x)>;
+    constexpr const char* maybeIntegerCoordinatesText = integerCoordinates ? " (integer coordinates)" : "";
+
     if (success)
     {
         // Test export
@@ -362,17 +395,36 @@ bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::p
         detria::TriangleLocation exportLocation = polylines.empty() ? detria::TriangleLocation::All : detria::TriangleLocation::Interior;
 
         std::vector<detria::Triangle<Idx>> triangles;
+        bool correctTriangleOrientation = true;
         tri.forEachTriangleOfLocation([&](const detria::Triangle<Idx>& triangle, const detria::TriangleLocation& /* location */)
         {
-            triangles.push_back(triangle);
-        }, exportLocation);
+            if (detria::math::orient2d<true>(points[triangle.x], points[triangle.y], points[triangle.z]) != detria::math::Orientation::CW)
+            {
+                correctTriangleOrientation = false;
+            }
 
-        exportObj(points, triangles, exportFolder / fileName.replace_extension("obj"));
-        std::cout << "Triangulation successful: " << fileName << std::endl;
+            triangles.push_back(triangle);
+        }, exportLocation, true);
+
+        if (!correctTriangleOrientation)
+        {
+            success = false;
+            std::cout << "Triangulation has flipped triangles: " << fileName << std::endl;
+        }
+
+        if (!integerCoordinates)
+        {
+            std::filesystem::path objFileName = fileName;
+            objFileName.replace_extension("obj");
+            exportObj(points, triangles, exportFolder / objFileName);
+        }
+
+        std::cout << "Triangulation successful" << maybeIntegerCoordinatesText << ": " << fileName << std::endl;
     }
     else
     {
-        std::cerr << "Triangulation failed: " << fileName << std::endl << "Message: " << tri.getErrorMessage() << std::endl;
+        std::cerr << maybeIntegerCoordinatesText << "Triangulation failed" << maybeIntegerCoordinatesText << ": " << fileName << std::endl
+            << "Message: " << tri.getErrorMessage() << std::endl;
     }
 
     std::cout << "Done in " << DurationToString(end - start) << std::endl;
@@ -495,7 +547,7 @@ static bool RandomTest()
     return success;
 }
 
-static void fractal(int depth, float cx, float cy, float size, float thickness, std::vector<Point>& points, std::vector<Polyline<Idx>>& polylines)
+static void fractal(int depth, Scalar cx, Scalar cy, Scalar size, Scalar thickness, std::vector<Point>& points, std::vector<Polyline<Idx>>& polylines)
 {
     Idx startIndex = Idx(points.size());
 
@@ -524,10 +576,10 @@ static void fractal(int depth, float cx, float cy, float size, float thickness, 
 
     if (depth != 0)
     {
-        constexpr float sizeFactor = 0.35f;
-        constexpr float spacingFactor = 0.425f;
+        constexpr Scalar sizeFactor = 0.35f;
+        constexpr Scalar spacingFactor = 0.425f;
 
-        float half = size * spacingFactor;
+        Scalar half = size * spacingFactor;
         fractal(depth - 1, cx - half, cy - half, size * sizeFactor, thickness * sizeFactor, points, polylines);
         fractal(depth - 1, cx + half, cy - half, size * sizeFactor, thickness * sizeFactor, points, polylines);
         fractal(depth - 1, cx + half, cy + half, size * sizeFactor, thickness * sizeFactor, points, polylines);
@@ -652,6 +704,23 @@ int main()
         "collinear.dat",
         "sketchup.dat"
     };
+    std::vector<std::filesystem::path> p2tFilesThatCanBeUsedWithIntegerCoordinates =
+    {
+        "2.dat",
+        "diamond.dat",
+        "dude.dat",
+        "e.dat",
+        "funny.dat",
+        "merge_test.dat",
+        "merge_test_2.dat",
+        "merge_test_3.dat",
+        "stalactite.dat",
+        "star.dat",
+        "steiner.dat",
+        "strange.dat",
+        "tank.dat",
+        "test.dat"
+    };
 
     auto contains = [](const std::vector<std::filesystem::path>& files, const std::filesystem::path file)
     {
@@ -665,6 +734,26 @@ int main()
         }
 
         return false;
+    };
+
+    auto testFile = [&](const std::filesystem::path& filePath, const std::filesystem::path& folder, const std::vector<std::filesystem::path>& filesExpectedToFail,
+        const std::vector<std::filesystem::path>& filesThatCanBeUsedWithIntegerCoordinates,
+        const std::vector<Point>& allPoints, const std::vector<Polyline<Idx>>& allPolylines, const std::vector<std::pair<Idx, Idx>>& allManuallyConstrainedEdges)
+    {
+        bool success = Triangulate(filePath, testExportFolder / folder, allPoints, allPolylines, allManuallyConstrainedEdges);
+        bool shouldFail = contains(filesExpectedToFail, filePath);
+
+        bool checkIntegerCoordinates = contains(filesThatCanBeUsedWithIntegerCoordinates, filePath);
+        bool successWithIntegerCoordinates = true;
+        if (checkIntegerCoordinates)
+        {
+            successWithIntegerCoordinates = Triangulate(filePath, testExportFolder / folder, getIntegerPoints(allPoints), allPolylines, { });
+        }
+
+        if (success == shouldFail || checkIntegerCoordinates && (successWithIntegerCoordinates == shouldFail))
+        {
+            failTest(filePath.string());
+        }
     };
 
     for (const std::filesystem::directory_entry& dir : std::filesystem::directory_iterator(testFilesFolder / "p2t"))
@@ -689,16 +778,11 @@ int main()
             continue;
         }
 
-        bool success = Triangulate(filePath, testExportFolder / "p2t", allPoints, allPolylines, { });
-        bool shouldFail = contains(p2tFilesExpectedToFail, filePath);
-
-        if (success == shouldFail)
-        {
-            failTest(filePath.string());
-        }
+        testFile(filePath, "p2t", p2tFilesExpectedToFail, p2tFilesThatCanBeUsedWithIntegerCoordinates, allPoints, allPolylines, { });
     }
 
-    auto testFilesFromFolder = [&](const std::filesystem::path& folder, const std::vector<std::filesystem::path>& filesExpectedToFail)
+    auto testFilesFromFolder = [&](const std::filesystem::path& folder, const std::vector<std::filesystem::path>& filesExpectedToFail,
+        const std::vector<std::filesystem::path>& filesThatCanBeUsedWithIntegerCoordinates)
     {
         for (const std::filesystem::directory_entry& dir : std::filesystem::directory_iterator(testFilesFolder / folder))
         {
@@ -723,13 +807,7 @@ int main()
                 continue;
             }
 
-            bool success = Triangulate(filePath, testExportFolder / folder, allPoints, allPolylines, allManuallyConstrainedEdges);
-            bool shouldFail = contains(filesExpectedToFail, filePath);
-
-            if (success == shouldFail)
-            {
-                failTest(filePath.string());
-            }
+            testFile(filePath, folder, filesExpectedToFail, filesThatCanBeUsedWithIntegerCoordinates, allPoints, allPolylines, allManuallyConstrainedEdges);
         }
     };
 
@@ -744,6 +822,16 @@ int main()
         "overlapping constraints2.txt",
         "points_on_constraint_edge.txt"
     };
+    std::vector<std::filesystem::path> cdtFilesThatCanBeUsedWithIntegerCoordinates =
+    {
+        "cdt.txt",
+        "gh_issue.txt",
+        "Hanging.txt",
+        "Hanging2.txt",
+        "Letter u.txt",
+        "ProblematicCase1.txt",
+        "unit square.txt"
+    };
 
     std::vector<std::filesystem::path> detriaFilesExpectedToFail =
     {
@@ -751,9 +839,12 @@ int main()
         "duplicate point indices.txt",
         "invalid indices.txt"
     };
+    std::vector<std::filesystem::path> detriaFilesThatCanBeUsedWithIntegerCoordinates =
+    {
+    };
 
-    testFilesFromFolder("CDT", cdtFilesExpectedToFail);
-    testFilesFromFolder("detria", detriaFilesExpectedToFail);
+    testFilesFromFolder("CDT", cdtFilesExpectedToFail, cdtFilesThatCanBeUsedWithIntegerCoordinates);
+    testFilesFromFolder("detria", detriaFilesExpectedToFail, detriaFilesThatCanBeUsedWithIntegerCoordinates);
 
 #endif
 

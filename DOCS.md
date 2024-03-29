@@ -225,6 +225,8 @@ The collection must have the basic functions of a collection, e.g. `size()`, `re
 
     **Important**: When using the robust tests, compiler flags for floating-point operation optimizations must be disabled (e.g. `-ffast-math` or `/fp:fast`).
 
+    Robust tests are not required when using integer points, so in that case these options are ignored.
+
 - `IndexChecks` - If enabled, then all user-provided indices are checked, and if anything is invalid (out-of-bounds or negative indices, or two consecutive duplicate indices), then an error is generated.  
 If disabled, then no checks are done, so if the input has any invalid indices, then it's undefined behavior (might crash).
 - `NaNChecks` - If enabled, then all the input points are checked, and if any of the points have a NaN or infinity value, then an error is generated.  
@@ -282,6 +284,10 @@ struct PointAdapterFromStdArrayWithReinterpret
 ```
 Point adapter classes must have a static function named `adapt`, that has a single parameter (the custom point type), and returns anything that has an `x` and an `y` field.  
 The input parameter and the returned value can both be const references.
+
+## Integer coordinates
+You can use integer coordinates for your points. For calculations, the values are converted to 64-bit signed integers to avoid overflows. But overflows can still happen if the difference of the coordinates are too large, which can cause errors in the triangulation.  
+Integer overflows are only checked in debug mode.
 
 # Custom allocators
 You can use custom allocators for memory management.  
