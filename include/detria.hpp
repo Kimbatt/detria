@@ -78,65 +78,6 @@ namespace detria
     using PointF = Vec2<float>;
     using PointD = Vec2<double>;
 
-    template <typename Point>
-    struct DefaultPointAdapter
-    {
-        // Adapter classes are used to convert point types, to types that have `x` and `y` fields.
-        // This is the default accessor, so the points must already have an `x` and `y` field, which must be the same type.
-        // For point types that don't have an `x` and `y` field, a custom adapter class must be created.
-        // That class must have the following static function called `adapt`: `static PointWithXY adapt(CustomPoint p)`
-        // where `CustomPoint` is the type of the custom point class, and `PointWithXY` is any type that has `x` and `y` fields
-        // `inline` and const references can also be used for these functions (see the implementation for this class below)
-        // For example, for a point class, which uses the index operator to get the components, the adapter class would look like this:
-        /*
-        struct PointAdapter
-        {
-            static Vec2<float> adapt(const CustomPoint& p)
-            {
-                return Vec2<float>{ .x = p[0], .y = p[1] };
-            }
-        };
-        */
-
-        // You can also reinterpret to avoid copies (make sure you know what you're doing)
-        /*
-        struct CustomPoint
-        {
-            std::array<float, 2> position;
-        };
-
-        struct PointWithXY
-        {
-            float x;
-            float y;
-        };
-
-        struct PointAdapter
-        {
-            inline static const PointWithXY& adapt(const CustomPoint& p)
-            {
-                return *reinterpret_cast<const PointWithXY*>(p.position.data());
-            }
-        };
-        */
-
-        // If you get an error here, then it's likely that your Point class has no field 'x'
-        // In this case, a custom adapter must be created, see the comment above
-        using Scalar = decltype(Point::x);
-
-        // If you get an error here, then it's likely that the type of 'x' in your Point class is not a number type
-        static_assert(std::is_arithmetic_v<Scalar>, "The Point type's x and y fields must be number types");
-
-        // If you get an error here, then it's likely that the type of 'x' and 'y' in your Point class are different
-        // (for example, if 'x' is float, then 'y' also must be a float, not a double)
-        static_assert(std::is_same_v<Scalar, decltype(Point::y)>, "The Point type's x and y fields must be the same type");
-
-        inline static const Point& adapt(const Point& p)
-        {
-            return p;
-        }
-    };
-
     template <typename Idx>
     struct Triangle
     {
@@ -1793,6 +1734,56 @@ namespace detria
         };
     }
 
+    template <typename Point, typename Idx>
+    struct DefaultPointGetter
+    {
+        // PointGetter classes are used retrieve points using custom logic. They can also be lambda functions.
+        // If a struct or a class is used, then it must have the following function:
+        // `Point operator()(Idx) const`
+        // 
+        // The function must return a point type which has an `x` and an `y` field (e.g. detria::PointD or detria::PointF).
+        // The function will be called with an index where 0 <= index < numPoints
+        // 
+        // For example, for a point class, which uses the index operator to get the components, a point getter class could look like this:
+        /*
+        struct PointGetter
+        {
+            detria::PointD operator()(uint32_t idx) const
+            {
+                const CustomPoint& p = _customPoints[idx];
+                return detria::PointD{ .x = p[0], .y = p[1] };
+            }
+
+        private:
+            std::vector<CustomPoint> _customPoints;
+        };
+        */
+        // The returned point can be a const reference if you already have the points in a compatible format.
+
+
+        // If you get an error here, then it's likely that the returned Point class has no field 'x'
+        using Scalar = decltype(Point::x);
+
+        // If you get an error here, then it's likely that the type of 'x' in the Point class is not a number type
+        static_assert(std::is_arithmetic_v<Scalar>, "The Point type's x and y fields must be number types");
+
+        // If you get an error here, then it's likely that the type of 'x' and 'y' in the Point class are different
+        // (for example, if 'x' is float, then 'y' also must be a float, not a double)
+        static_assert(std::is_same_v<Scalar, decltype(Point::y)>, "The Point type's x and y fields must be the same type");
+
+        DefaultPointGetter(detail::ReadonlySpan<Point> points) : _points(points)
+        {
+        }
+
+        const Point& operator()(Idx idx) const
+        {
+            return _points[size_t(idx)];
+        }
+
+    private:
+        detail::ReadonlySpan<Point> _points;
+    };
+
     namespace topology
     {
         template <
@@ -2296,7 +2287,7 @@ namespace detria
 
 #define DETRIA_CHECK(cond) do { if (!(cond)) DETRIA_UNLIKELY { return false; } } while (0)
 
-    template <typename Point>
+    template <typename Point, typename Idx>
     struct DefaultTriangulationConfig
     {
         // Default configuration for a triangulation.
@@ -2304,7 +2295,7 @@ namespace detria
         // For example:
         /*
 
-        struct MyTriangulationConfig : public DefaultTriangulationConfig<detria::PointD>
+        struct MyTriangulationConfig : public DefaultTriangulationConfig<detria::PointD, uint32_t>
         {
             using Allocator = MyCustomAllocatorType;
 
@@ -2319,8 +2310,8 @@ namespace detria
 
         */
 
-        // Used for converting between user-defined types. See comment at `DefaultPointAdapter` for more info.
-        using PointAdapter = DefaultPointAdapter<Point>;
+        // Used to retrieve points with possibly custom logic. See comment at `DefaultPointGetter` for more info.
+        using PointGetter = DefaultPointGetter<Point, Idx>;
 
         // Custom allocator to use for collections.
         using Allocator = memory::DefaultAllocator;
@@ -2356,12 +2347,12 @@ namespace detria
     template <
         typename Point = PointD,
         typename Idx = uint32_t,
-        typename Config = DefaultTriangulationConfig<Point>
+        typename Config = DefaultTriangulationConfig<Point, Idx>
     >
     class Triangulation
     {
     private:
-        using PointAdapter = typename Config::PointAdapter;
+        using PointGetter = typename Config::PointGetter;
 
         using Allocator = typename Config::Allocator;
 
@@ -2371,11 +2362,10 @@ namespace detria
         template <typename T>
         using CollectionWithAllocator = Collection<T, typename Allocator::template StlAllocator<T>>;
 
-        using Vector2 = std::invoke_result_t<decltype(PointAdapter::adapt), const Point&>; // Can be const reference
+        using Vector2 = std::invoke_result_t<decltype(&PointGetter::operator()), const PointGetter&, Idx>; // Can be const reference
 
         using Scalar = decltype(std::decay_t<Vector2>::x);
-        static_assert(std::is_same_v<Scalar, decltype(std::decay_t<Vector2>::y)>,
-            "Adapted point must have `x` and `y` fields, and they must be the same type");
+        static_assert(std::is_same_v<Scalar, decltype(std::decay_t<Vector2>::y)>, "Point type must have `x` and `y` fields, and they must be the same type");
 
         static_assert(std::is_integral_v<Idx>, "Index type must be an integer type");
 
@@ -2814,7 +2804,7 @@ namespace detria
 
         Triangulation(Allocator allocator = { }) :
             _allocator(allocator),
-            _points(),
+            _pointGetter(),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_polylines),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_manuallyConstrainedEdges),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_autoDetectedPolylineTypes),
@@ -2860,7 +2850,8 @@ namespace detria
         // Clears all data of the triangulation, allowing the triangulation object to be reused
         void clear()
         {
-            _points.reset();
+            _pointGetter.reset();
+            _numPoints = 0;
             _polylines.clear();
             _manuallyConstrainedEdges.clear();
 
@@ -2873,9 +2864,18 @@ namespace detria
         // If a point should be part of an outline, then use `addOutline`
         // If a point should be part of a hole, then use `addHole`
         // The rest of the points will be steiner points
-        void setPoints(detail::ReadonlySpan<Point> points)
+        // If you're using a custom point getter which cannot be constructed from `points`, then use the `setPointGetter` function instead
+        template <typename Points>
+        void setPoints(const Points& points)
         {
-            _points = points;
+            _pointGetter = PointGetter(points);
+            _numPoints = points.size();
+        }
+
+        void setPointGetter(PointGetter pointGetter, size_t numPoints)
+        {
+            _pointGetter.emplace(pointGetter);
+            _numPoints = numPoints;
         }
 
         // `addOutline`, `addHole`, and `addPolylineAutoDetectType` return the polyline's index,
@@ -2984,7 +2984,7 @@ namespace detria
         // Iterate over every single triangle of the triangulation, even convex hull triangles
         void forEachTriangleOfEveryLocation(auto&& callback, bool cwTriangles = true) const
         {
-            forEachTriangleInternal(callback, cwTriangles, [](const TriangleIndex&) { return true; });
+            forEachTriangleInternal(callback, cwTriangles, [](size_t) { return true; });
         }
 
         // Iterate over every triangle of a given location
@@ -3069,14 +3069,14 @@ namespace detria
             _autoDetectedPolylineTypes.clear();
         }
 
-        inline static Vector2 adapt(const Point& p)
+        inline Vector2 getPoint(Idx pointIndex) const
         {
-            return PointAdapter::adapt(p);
+            return (*_pointGetter)(pointIndex);
         }
 
         bool triangulateInternal(bool delaunay)
         {
-            if (_points.size() < 3) DETRIA_UNLIKELY
+            if (!_pointGetter.has_value() || _numPoints < 3) DETRIA_UNLIKELY
             {
                 // Need at least 3 points to triangulate
                 return fail(TE_LessThanThreePoints{ });
@@ -3085,14 +3085,14 @@ namespace detria
             if constexpr (Config::NaNChecks && std::is_floating_point_v<Scalar>)
             {
                 // Check NaN / inf values
-                for (size_t i = 0; i < _points.size(); ++i)
+                for (Idx i = 0; i < Idx(_numPoints); ++i)
                 {
-                    Vector2 p = adapt(_points[i]);
+                    Vector2 p = getPoint(i);
                     if (!std::isfinite(p.x) || !std::isfinite(p.y)) DETRIA_UNLIKELY
                     {
                         return fail(TE_NonFinitePositionFound
                         {
-                            .index = Idx(i),
+                            .index = i,
                             .value = std::isfinite(p.x) ? p.y : p.x
                         });
                     }
@@ -3100,11 +3100,11 @@ namespace detria
             }
 
             // Reserve topology capacity
-            _topology.reserveVertices(_points.size());
-            size_t numTriangles = _points.size() * 2; // Guess number of triangles
+            _topology.reserveVertices(_numPoints);
+            size_t numTriangles = _numPoints * 2; // Guess number of triangles
 
             // Number of edges should be around number of vertices + number of triangles
-            _topology.reserveHalfEdges((_points.size() + numTriangles) * 2);
+            _topology.reserveHalfEdges((_numPoints + numTriangles) * 2);
 
             if constexpr (collectionHasReserve)
             {
@@ -3112,7 +3112,7 @@ namespace detria
             }
 
             // Only create the vertices for now
-            for (size_t i = 0; i < _points.size(); ++i)
+            for (size_t i = 0; i < _numPoints; ++i)
             {
                 _topology.createVertex();
             }
@@ -3136,8 +3136,8 @@ namespace detria
         {
             // Initialize point data
             CollectionWithAllocator<Idx>& sortedPoints = _initialTriangulation_SortedPoints;
-            sortedPoints.resize(_points.size());
-            for (size_t i = 0; i < _points.size(); ++i)
+            sortedPoints.resize(_numPoints);
+            for (size_t i = 0; i < _numPoints; ++i)
             {
                 sortedPoints[i] = Idx(i);
             }
@@ -3150,20 +3150,20 @@ namespace detria
 
             Config::Sorter::sort(sortedPoints.begin(), sortedPoints.end(), [&](const Idx& idxA, const Idx& idxB)
             {
-                Vector2 a = adapt(_points[size_t(idxA)]);
-                Vector2 b = adapt(_points[size_t(idxB)]);
+                Vector2 a = getPoint(idxA);
+                Vector2 b = getPoint(idxB);
                 bool differentX = a.x != b.x;
                 return differentX ? a.x < b.x : a.y < b.y;
             });
 
             // Since the points are sorted, duplicates must be next to each other (if any)
-            for (size_t i = 1; i < sortedPoints.size(); ++i)
+            for (size_t i = 1; i < _numPoints; ++i)
             {
                 Idx prevIndex = sortedPoints[i - 1];
                 Idx currentIndex = sortedPoints[i];
 
-                Vector2 prev = adapt(_points[prevIndex]);
-                Vector2 current = adapt(_points[currentIndex]);
+                Vector2 prev = getPoint(prevIndex);
+                Vector2 current = getPoint(currentIndex);
 
                 if (prev.x == current.x && prev.y == current.y) DETRIA_UNLIKELY
                 {
@@ -3183,15 +3183,15 @@ namespace detria
 
             const Idx& p0Idx = sortedPoints[0];
             const Idx& p1Idx = sortedPoints[1];
-            Vector2 p0Position = adapt(_points[size_t(p0Idx)]);
-            Vector2 p1Position = adapt(_points[size_t(p1Idx)]);
+            Vector2 p0Position = getPoint(p0Idx);
+            Vector2 p1Position = getPoint(p1Idx);
 
             size_t firstNonCollinearIndex = 0; // Index to the list of sorted points, not the original points
             math::Orientation triangleOrientation = math::Orientation::Collinear;
             for (size_t i = 2; i < sortedPoints.size(); ++i)
             {
                 const Idx& currentIdx = sortedPoints[i];
-                Vector2 currentPosition = adapt(_points[size_t(currentIdx)]);
+                Vector2 currentPosition = getPoint(currentIdx);
 
                 triangleOrientation = orient2d(p0Position, p1Position, currentPosition);
                 if (triangleOrientation != math::Orientation::Collinear)
@@ -3300,7 +3300,7 @@ namespace detria
             auto addPoint = [&](size_t sortedPointIdx)
             {
                 const Idx& originalIndex = sortedPoints[sortedPointIdx];
-                Vector2 position = adapt(_points[size_t(originalIndex)]);
+                Vector2 position = getPoint(originalIndex);
 
                 auto isEdgeVisible = [&](const Idx& nodeId)
                 {
@@ -3310,8 +3310,8 @@ namespace detria
                     const ListNode& next = _convexHullPoints.getNode(node.nextId);
 
                     math::Orientation orientation = orient2d(
-                        adapt(_points[size_t(node.data.index)]),
-                        adapt(_points[size_t(next.data.index)]),
+                        getPoint(node.data.index),
+                        getPoint(next.data.index),
                         position
                     );
 
@@ -3434,7 +3434,7 @@ namespace detria
 
                 auto getXCoord = [&](const Idx& id)
                 {
-                    return adapt(_points[size_t(_convexHullPoints.getNode(id).data.index)]).x;
+                    return getPoint(_convexHullPoints.getNode(id).data.index).x;
                 };
 
                 if (getXCoord(lastPointId) < getXCoord(rightMostConvexHullPointAtStart))
@@ -3541,12 +3541,12 @@ namespace detria
                 */
 
                 // Points of the current edge
-                Vector2 vertex0Position = adapt(_points[size_t(vertex0.index)]);
-                Vector2 vertex1Position = adapt(_points[size_t(vertex1.index)]);
+                Vector2 vertex0Position = getPoint(vertex0.index);
+                Vector2 vertex1Position = getPoint(vertex1.index);
 
                 // Points of the edge that we'd get if a flip is needed
-                Vector2 otherVertex0Position = adapt(_points[size_t(otherVertex0.index)]);
-                Vector2 otherVertex1Position = adapt(_points[size_t(otherVertex1.index)]);
+                Vector2 otherVertex0Position = getPoint(otherVertex0.index);
+                Vector2 otherVertex1Position = getPoint(otherVertex1.index);
 
                 // TODO?: maybe we could allow user-defined functions to decide if an edge should be flipped
                 // That would enable other metrics, e.g. minimize edge length, flip based on the aspect ratio of the triangles, etc.
@@ -3655,12 +3655,12 @@ namespace detria
         {
             if constexpr (Config::IndexChecks)
             {
-                if (idxA < Idx(0) || idxA >= Idx(_points.size()) || idxB < Idx(0) || idxB >= Idx(_points.size())) DETRIA_UNLIKELY
+                if (idxA < Idx(0) || idxA >= Idx(_numPoints) || idxB < Idx(0) || idxB >= Idx(_numPoints)) DETRIA_UNLIKELY
                 {
                     return fail(TE_PolylineIndexOutOfBounds
                     {
-                        .pointIndex = (idxA < Idx(0) || idxA >= Idx(_points.size())) ? idxA : idxB,
-                        .numPointsInPolyline = Idx(_points.size())
+                        .pointIndex = (idxA < Idx(0) || idxA >= Idx(_numPoints)) ? idxA : idxB,
+                        .numPointsInPolyline = Idx(_numPoints)
                     });
                 }
 
@@ -3772,8 +3772,8 @@ namespace detria
             This will ensure that an edge exists between v0 and v1
             */
 
-            const Point& p0 = _points[size_t(v0.index)];
-            const Point& p1 = _points[size_t(v1.index)];
+            Idx p0 = v0.index;
+            Idx p1 = v1.index;
 
             THalfEdge initialTriangleEdge{ };
             TVertex vertexCW{ };
@@ -3836,14 +3836,14 @@ namespace detria
             return true;
         }
 
-        bool findInitialTriangleForConstrainedEdge(const TVertex& v0, const TVertex& v1, const Point& p0, const Point& p1,
+        bool findInitialTriangleForConstrainedEdge(const TVertex& v0, const TVertex& v1, Idx p0, Idx p1,
             THalfEdge& initialTriangleEdge, TVertex& vertexCW, TVertex& vertexCCW)
         {
             bool found = false;
             bool error = false;
 
-            Vector2 p0Position = adapt(p0);
-            Vector2 p1Position = adapt(p1);
+            Vector2 p0Position = getPoint(p0);
+            Vector2 p1Position = getPoint(p1);
 
             _topology.forEachEdgeOfVertex(v0, [&](THalfEdge e)
             {
@@ -3854,8 +3854,8 @@ namespace detria
 
                 // We are looking for a triangle where "v0, v1, nextVertex" is ccw, and "v0, v1, prevVertex" is cw
 
-                Vector2 prevVertexPosition = adapt(_points[size_t(prevVertex.index)]);
-                Vector2 nextVertexPosition = adapt(_points[size_t(nextVertex.index)]);
+                Vector2 prevVertexPosition = getPoint(prevVertex.index);
+                Vector2 nextVertexPosition = getPoint(nextVertex.index);
 
                 math::Orientation orientNext = orient2d(p0Position, p1Position, nextVertexPosition);
                 math::Orientation orientPrev = orient2d(p0Position, p1Position, prevVertexPosition);
@@ -3945,7 +3945,7 @@ namespace detria
             return !error;
         }
 
-        bool removeInnerTrianglesAndGetOuterVertices(const TVertex& v0, const TVertex& v1, const Point& p0, const Point& p1,
+        bool removeInnerTrianglesAndGetOuterVertices(const TVertex& v0, const TVertex& v1, Idx p0, Idx p1,
             TVertex vertexCW, TVertex vertexCCW, THalfEdge initialTriangleEdge,
             CollectionWithAllocator<TVertex>& verticesCW, CollectionWithAllocator<TVertex>& verticesCCW)
         {
@@ -3983,7 +3983,7 @@ namespace detria
                 {
                     // Find next direction
 
-                    math::Orientation orientation = orient2d(adapt(p0), adapt(p1), adapt(_points[size_t(thirdVertex.index)]));
+                    math::Orientation orientation = orient2d(getPoint(p0), getPoint(p1), getPoint(thirdVertex.index));
                     if (orientation == math::Orientation::Collinear) DETRIA_UNLIKELY
                     {
                         // Point on a constrained edge, this is not allowed
@@ -4078,9 +4078,9 @@ namespace detria
                     TVertex prevVertex = _constrainedEdgeReTriangulationStack[_constrainedEdgeReTriangulationStack.size() - 1];
 
                     math::Orientation orientation = orient2d(
-                        adapt(_points[size_t(prevPrevVertex.index)]),
-                        adapt(_points[size_t(prevVertex.index)]),
-                        adapt(_points[size_t(currentVertex.index)])
+                        getPoint(prevPrevVertex.index),
+                        getPoint(prevVertex.index),
+                        getPoint(currentVertex.index)
                     );
 
                     if (orientation == requiredOrientation)
@@ -4476,7 +4476,8 @@ namespace detria
         Allocator _allocator;
 
         // Inputs
-        detail::ReadonlySpan<Point> _points;
+        std::optional<PointGetter> _pointGetter;
+        size_t _numPoints;
         CollectionWithAllocator<PolylineData> _polylines;
         CollectionWithAllocator<Vec2<Idx>> _manuallyConstrainedEdges;
         CollectionWithAllocator<EdgeType> _autoDetectedPolylineTypes;

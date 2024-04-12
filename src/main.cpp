@@ -685,6 +685,36 @@ static bool FractalTest()
     return true;
 }
 
+// Mostly just to check if it compiles
+static bool testCustomPointGetter()
+{
+    std::vector<Point> points(100);
+
+    constexpr Idx indexOffset = 20;
+    constexpr size_t numPoints = 5;
+
+    points[size_t(indexOffset + 0)] = Point{ .x = 0.0, .y = 0.0 };
+    points[size_t(indexOffset + 1)] = Point{ .x = 1.0, .y = 0.0 };
+    points[size_t(indexOffset + 2)] = Point{ .x = 1.0, .y = 1.0 };
+    points[size_t(indexOffset + 3)] = Point{ .x = 0.0, .y = 1.0 };
+    points[size_t(indexOffset + 4)] = Point{ .x = 0.5, .y = 0.5 };
+
+    auto pointGetter = [&](Idx idx) -> const Point&
+    {
+        return points[size_t(idx + indexOffset)];
+    };
+
+    struct Config : detria::DefaultTriangulationConfig<Point, Idx>
+    {
+        using PointGetter = decltype(pointGetter);
+    };
+
+    detria::Triangulation<Point, Idx, Config> tri;
+    tri.setPointGetter(pointGetter, numPoints);
+
+    return tri.triangulate(true);
+}
+
 int main()
 {
     std::filesystem::path testFilesFolder = std::filesystem::path("test-data");
@@ -848,7 +878,10 @@ int main()
 
 #endif
 
-    int exitCode = 0;
+    if (!testCustomPointGetter())
+    {
+        failTest("Custom point getter");
+    }
 
     if (!RandomTest())
     {
@@ -862,6 +895,7 @@ int main()
 
     constexpr char separator[] = "================================================================";
 
+    int exitCode = 0;
     if (failedTestCases.empty())
     {
         std::cout << std::endl
