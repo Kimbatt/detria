@@ -165,7 +165,7 @@ namespace detria
         }
 
         template <typename Scalar>
-        static constexpr predicates::ErrorBounds errorBounds = predicates::calculateErrorBounds<Scalar>();
+        static constexpr predicates::ErrorBounds<Scalar> errorBounds = predicates::calculateErrorBounds<Scalar>();
 
 #define DETRIA_INEXACT
 
@@ -1837,7 +1837,15 @@ namespace detria
                 {
                 }
 
-                inline bool operator==(const VertexIndex&) const = default;
+                inline bool operator==(const VertexIndex& other) const
+                {
+                    return index == other.index;
+                }
+
+                inline bool operator!=(const VertexIndex& other) const
+                {
+                    return index != other.index;
+                }
 
                 inline bool isValid() const
                 {
@@ -1857,7 +1865,15 @@ namespace detria
                 {
                 }
 
-                inline bool operator==(const HalfEdgeIndex&) const = default;
+                inline bool operator==(const HalfEdgeIndex& other) const
+                {
+                    return index == other.index;
+                }
+
+                inline bool operator!=(const HalfEdgeIndex& other) const
+                {
+                    return index != other.index;
+                }
 
                 inline bool isValid() const
                 {
@@ -2081,7 +2097,8 @@ namespace detria
                 return createNewEdge(a, b, afterEdgeA, afterEdgeB);
             }
 
-            inline void forEachEdgeOfVertex(VertexIndex idx, auto callback) const
+            template <typename Callback>
+            inline void forEachEdgeOfVertex(VertexIndex idx, Callback callback) const
             {
                 const Vertex& v = getVertex(idx);
                 if (!v.firstEdge.isValid())
@@ -2092,7 +2109,7 @@ namespace detria
                 HalfEdgeIndex firstEdge = v.firstEdge;
                 HalfEdgeIndex currentEdgeIndex = firstEdge;
 
-                constexpr bool callbackReturnsBoolean = std::is_same_v<std::invoke_result_t<decltype(callback), HalfEdgeIndex>, bool>;
+                constexpr bool callbackReturnsBoolean = std::is_same_v<std::invoke_result_t<Callback, HalfEdgeIndex>, bool>;
 
                 do
                 {
@@ -2514,7 +2531,15 @@ namespace detria
             {
             }
 
-            inline bool operator==(const TriangleIndex&) const = default;
+            inline bool operator==(const TriangleIndex& other) const
+            {
+                return index == other.index;
+            }
+
+            inline bool operator!=(const TriangleIndex& other) const
+            {
+                return index != other.index;
+            }
 
             inline bool isValid() const
             {
@@ -2888,8 +2913,8 @@ namespace detria
 
             _polylines.push_back(PolylineData
             {
-                .pointIndices = outline,
-                .type = EdgeType::Outline
+                outline,
+                EdgeType::Outline
             });
 
             return id;
@@ -2902,8 +2927,8 @@ namespace detria
 
             _polylines.push_back(PolylineData
             {
-                .pointIndices = hole,
-                .type = EdgeType::Hole
+                hole,
+                EdgeType::Hole
             });
 
             return id;
@@ -2916,8 +2941,8 @@ namespace detria
 
             _polylines.push_back(PolylineData
             {
-                .pointIndices = polyline,
-                .type = EdgeType::AutoDetect
+                polyline,
+                EdgeType::AutoDetect
             });
 
             return id;
@@ -2926,7 +2951,7 @@ namespace detria
         // Set a single constrained edge, which will be part of the final triangulation
         void setConstrainedEdge(const Idx& idxA, const Idx& idxB)
         {
-            _manuallyConstrainedEdges.push_back({ .x = idxA, .y = idxB });
+            _manuallyConstrainedEdges.push_back({ idxA, idxB });
         }
 
         // Perform the triangulation
@@ -2964,7 +2989,8 @@ namespace detria
         }
 
         // Iterate over every interior triangle of the triangulation
-        void forEachTriangle(auto&& callback, bool cwTriangles = true) const
+        template <typename Callback>
+        void forEachTriangle(Callback&& callback, bool cwTriangles = true) const
         {
             forEachTriangleInternal(callback, cwTriangles, [&](size_t triIndex)
             {
@@ -2973,7 +2999,8 @@ namespace detria
         }
 
         // Iterate over every hole triangle of the triangulation
-        void forEachHoleTriangle(auto&& callback, bool cwTriangles = true) const
+        template <typename Callback>
+        void forEachHoleTriangle(Callback&& callback, bool cwTriangles = true) const
         {
             forEachTriangleInternal(callback, cwTriangles, [&](size_t triIndex)
             {
@@ -2982,14 +3009,16 @@ namespace detria
         }
 
         // Iterate over every single triangle of the triangulation, even convex hull triangles
-        void forEachTriangleOfEveryLocation(auto&& callback, bool cwTriangles = true) const
+        template <typename Callback>
+        void forEachTriangleOfEveryLocation(Callback&& callback, bool cwTriangles = true) const
         {
             forEachTriangleInternal(callback, cwTriangles, [](size_t) { return true; });
         }
 
         // Iterate over every triangle of a given location
         // Locations can be combined, to iterate over e.g. both interior and hole triangles
-        void forEachTriangleOfLocation(auto&& callback, const TriangleLocation& locationMask, bool cwTriangles = true) const
+        template <typename Callback>
+        void forEachTriangleOfLocation(Callback&& callback, const TriangleLocation& locationMask, bool cwTriangles = true) const
         {
             uint8_t mask = static_cast<uint8_t>(locationMask);
 
@@ -3013,7 +3042,8 @@ namespace detria
 
         // Iterate over the vertices (vertex indices) in the convex hull
         // The vertices are in clockwise order
-        void forEachConvexHullVertex(auto&& callback)
+        template <typename Callback>
+        void forEachConvexHullVertex(Callback&& callback)
         {
             if (_convexHullPoints.size() == 0 || _convexHullStartIndex == Idx(-1))
             {
@@ -3092,8 +3122,8 @@ namespace detria
                     {
                         return fail(TE_NonFinitePositionFound
                         {
-                            .index = i,
-                            .value = std::isfinite(p.x) ? p.y : p.x
+                            i,
+                            std::isfinite(p.x) ? p.y : p.x
                         });
                     }
                 }
@@ -3169,10 +3199,10 @@ namespace detria
                 {
                     return fail(TE_DuplicatePointsFound
                     {
-                        .positionX = current.x,
-                        .positionY = current.y,
-                        .idx0 = prevIndex,
-                        .idx1 = currentIndex
+                        current.x,
+                        current.y,
+                        prevIndex,
+                        currentIndex
                     });
                 }
             }
@@ -3475,9 +3505,9 @@ namespace detria
 
                 _delaunayCheckStack.emplace_back(TopologyEdgeWithVertices
                 {
-                    .v0 = edge.vertex,
-                    .v1 = opposite.vertex,
-                    .edge = e
+                    edge.vertex,
+                    opposite.vertex,
+                    e
                 });
             };
 
@@ -3659,8 +3689,8 @@ namespace detria
                 {
                     return fail(TE_PolylineIndexOutOfBounds
                     {
-                        .pointIndex = (idxA < Idx(0) || idxA >= Idx(_numPoints)) ? idxA : idxB,
-                        .numPointsInPolyline = Idx(_numPoints)
+                        (idxA < Idx(0) || idxA >= Idx(_numPoints)) ? idxA : idxB,
+                        Idx(_numPoints)
                     });
                 }
 
@@ -3668,7 +3698,7 @@ namespace detria
                 {
                     return fail(TE_PolylineDuplicateConsecutivePoints
                     {
-                        .pointIndex = idxA
+                        idxA
                     });
                 }
             }
@@ -3711,8 +3741,8 @@ namespace detria
                         case EdgeType::Hole:
                             currentEdgeData.data = oppositeEdgeData.data = typename EdgeData::OutlineOrHoleData
                             {
-                                .polylineIndex = polylineIndex,
-                                .type = constrainedEdgeType
+                                polylineIndex,
+                                constrainedEdgeType
                             };
 
                             break;
@@ -3730,8 +3760,8 @@ namespace detria
                         // Cannot have an edge that is both an outline and a hole
                         return fail(TE_EdgeWithDifferentConstrainedTypes
                         {
-                            .idx0 = idxA,
-                            .idx1 = idxB
+                            idxA,
+                            idxB
                         });
                     }
                 }
@@ -3807,20 +3837,20 @@ namespace detria
             {
                 constrainedEdge.data = oppositeConstrainedEdge.data = EdgeData
                 {
-                    .data = typename EdgeData::ManuallyConstrainedEdgeTag{ },
-                    .flags = EdgeData::Flags::None
+                    typename EdgeData::ManuallyConstrainedEdgeTag{ },
+                    EdgeData::Flags::None
                 };
             }
             else
             {
                 constrainedEdge.data = oppositeConstrainedEdge.data = EdgeData
                 {
-                    .data = typename EdgeData::OutlineOrHoleData
+                    typename EdgeData::OutlineOrHoleData
                     {
-                        .polylineIndex = polylineIndex,
-                        .type = constrainedEdgeType
+                        polylineIndex,
+                        constrainedEdgeType
                     },
-                    .flags = EdgeData::Flags::None
+                    EdgeData::Flags::None
                 };
             }
 
@@ -3915,9 +3945,9 @@ namespace detria
                         found = true;
                         fail(TE_PointOnConstrainedEdge
                         {
-                            .pointIndex = orientPrev == math::Orientation::Collinear ? prevVertex.index : nextVertex.index,
-                            .edgePointIndex0 = v0.index,
-                            .edgePointIndex1 = v1.index
+                            orientPrev == math::Orientation::Collinear ? prevVertex.index : nextVertex.index,
+                            v0.index,
+                            v1.index
                         });
 
                         return false;
@@ -3965,10 +3995,10 @@ namespace detria
                     // This means that some outlines or holes are intersecting
                     return fail(TE_ConstrainedEdgeIntersection
                     {
-                        .idx0 = v0.index,
-                        .idx1 = v1.index,
-                        .idx2 = vertexCW.index,
-                        .idx3 = vertexCCW.index
+                        v0.index,
+                        v1.index,
+                        vertexCW.index,
+                        vertexCCW.index
                     });
                 }
 
@@ -3989,9 +4019,9 @@ namespace detria
                         // Point on a constrained edge, this is not allowed
                         return fail(TE_PointOnConstrainedEdge
                         {
-                            .pointIndex = thirdVertex.index,
-                            .edgePointIndex0 = v0.index,
-                            .edgePointIndex1 = v1.index
+                            thirdVertex.index,
+                            v0.index,
+                            v1.index
                         });
                     }
 
@@ -4218,13 +4248,13 @@ namespace detria
 
                 TriangleWithData& tri = _resultTriangles.emplace_back(TriangleWithData
                 {
-                    .triangle = Tri
+                    Tri
                     {
-                        .x = e0.vertex.index,
-                        .y = e1.vertex.index,
-                        .z = e2.vertex.index
+                        e0.vertex.index,
+                        e1.vertex.index,
+                        e2.vertex.index
                     },
-                    .data = { }
+                    TriangleData{ }
                 });
 
                 tri.data.firstEdge = edge;
@@ -4237,7 +4267,7 @@ namespace detria
             _resultTriangles[size_t(startingTriangle.index)].data.locationData = typename TriangleData::KnownLocationData
             {
                 // nullopt if the edge is not part of an outline or a hole
-                .parentPolylineIndex = startingEdgeData.getOutlineOrHoleIndex()
+                startingEdgeData.getOutlineOrHoleIndex()
             };
 
             // For each polyline, store which other polyline contains them
@@ -4375,7 +4405,7 @@ namespace detria
                             else
                             {
                                 // Invalid case, either an outline is inside another outline, or a hole is inside another hole
-                                return fail(TE_StackedPolylines{ .isHole = currentEdgeIsHole });
+                                return fail(TE_StackedPolylines{ currentEdgeIsHole });
                             }
                         }
                     }
@@ -4387,7 +4417,7 @@ namespace detria
 
                     _resultTriangles[size_t(neighborTriangle.index)].data.locationData = typename TriangleData::KnownLocationData
                     {
-                        .parentPolylineIndex = neighborTriangleParentPolylineIndex
+                        neighborTriangleParentPolylineIndex
                     };
 
                     trianglesToCheck.push_back(neighborTriangle);
@@ -4444,7 +4474,8 @@ namespace detria
             return tri;
         }
 
-        void forEachTriangleInternal(auto&& callback, bool cwTriangles, auto&& shouldProcessTriangle) const
+        template <typename Callback, typename ProcessTriangleCallback>
+        void forEachTriangleInternal(Callback&& callback, bool cwTriangles, ProcessTriangleCallback&& shouldProcessTriangle) const
         {
             for (size_t i = 0; i < _resultTriangles.size(); ++i)
             {

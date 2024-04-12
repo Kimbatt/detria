@@ -155,7 +155,7 @@ bool ParseFileP2T(const std::filesystem::path& filePath, std::vector<Point>& out
                     return false;
                 }
 
-                Point point{ .x = x, .y = y };
+                Point point{ x, y };
 
                 switch (state)
                 {
@@ -290,7 +290,7 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
             Scalar x{ };
             Scalar y{ };
             f >> x >> y;
-            allPoints.emplace_back(Point{ .x = x, .y = y });
+            allPoints.emplace_back(Point{ x, y });
         }
 
         // Read polylines
@@ -299,8 +299,8 @@ bool readFile(const std::filesystem::path& path, std::vector<Point>& allPoints, 
             size_t numVerticesInPolyline = polylineLengths[i];
             Polyline<Idx>& currentPolyline = resultPolylines.emplace_back(Polyline<Idx>
             {
-                .pointIndices = { },
-                .type = PolylineType::AutoDetect
+                std::vector<Idx>{ },
+                PolylineType::AutoDetect
             });
             currentPolyline.pointIndices.reserve(numVerticesInPolyline);
 
@@ -338,11 +338,7 @@ std::vector<detria::Vec2<int>> getIntegerPoints(const std::vector<Point>& points
 
     for (const Point& p : points)
     {
-        resultPoints.emplace_back(detria::Vec2<int>
-        {
-            .x = int(p.x),
-            .y = int(p.y)
-        });
+        resultPoints.emplace_back(detria::Vec2<int>{ int(p.x), int(p.y) });
     }
 
     return resultPoints;
@@ -494,10 +490,10 @@ static bool RandomTest()
             {
                 points =
                 {
-                    { .x = minSize, .y = minSize },
-                    { .x = maxSize, .y = minSize },
-                    { .x = maxSize, .y = maxSize },
-                    { .x = minSize, .y = maxSize },
+                    { minSize, minSize },
+                    { maxSize, minSize },
+                    { maxSize, maxSize },
+                    { minSize, maxSize },
                 };
 
                 tri.addOutline(constrainedEdgeIndices);
@@ -509,8 +505,8 @@ static bool RandomTest()
             {
                 points.emplace_back(Point
                 {
-                    .x = randomMinMax(minSize, maxSize),
-                    .y = randomMinMax(minSize, maxSize)
+                    randomMinMax(minSize, maxSize),
+                    randomMinMax(minSize, maxSize)
                 });
             }
 
@@ -557,8 +553,8 @@ static void fractal(int depth, Scalar cx, Scalar cy, Scalar size, Scalar thickne
     points.emplace_back(Point{ cx - size, cy + size });
     polylines.emplace_back(Polyline<Idx>
     {
-        .pointIndices = { startIndex, startIndex + 1, startIndex + 2, startIndex + 3 },
-        .type = PolylineType::AutoDetect
+        { startIndex, startIndex + 1, startIndex + 2, startIndex + 3 },
+        PolylineType::AutoDetect
     });
 
 #if false // Can get a different fractal with this
@@ -693,11 +689,11 @@ static bool testCustomPointGetter()
     constexpr Idx indexOffset = 20;
     constexpr size_t numPoints = 5;
 
-    points[size_t(indexOffset + 0)] = Point{ .x = 0.0, .y = 0.0 };
-    points[size_t(indexOffset + 1)] = Point{ .x = 1.0, .y = 0.0 };
-    points[size_t(indexOffset + 2)] = Point{ .x = 1.0, .y = 1.0 };
-    points[size_t(indexOffset + 3)] = Point{ .x = 0.0, .y = 1.0 };
-    points[size_t(indexOffset + 4)] = Point{ .x = 0.5, .y = 0.5 };
+    points[size_t(indexOffset + 0)] = Point{ 0.0, 0.0 };
+    points[size_t(indexOffset + 1)] = Point{ 1.0, 0.0 };
+    points[size_t(indexOffset + 2)] = Point{ 1.0, 1.0 };
+    points[size_t(indexOffset + 3)] = Point{ 0.0, 1.0 };
+    points[size_t(indexOffset + 4)] = Point{ 0.5, 0.5 };
 
     auto pointGetter = [&](Idx idx) -> const Point&
     {
