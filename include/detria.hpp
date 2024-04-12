@@ -2154,15 +2154,16 @@ namespace detria
 
             inline void flipEdge(HalfEdgeIndex edgeIndex)
             {
-                //      0                 0
-                //      *                 *
-                //     /|\               / \
-                //    / | \             /   \
-                // 3 *  |  * 1  -->  3 *-----* 1
-                //    \ | /             \   /
-                //     \|/               \ /
-                //      *                 *
-                //      2                 2
+                /*        0                 0
+                 *        *                 *
+                 *       /|\               / \
+                 *      / | \             /   \
+                 *   3 *  |  * 1  -->  3 *-----* 1
+                 *      \ | /             \   /
+                 *       \|/               \ /
+                 *        *                 *
+                 *        2                 2
+		 */
 
                 // Setup all references
                 HalfEdge& edge = getEdge(edgeIndex);
