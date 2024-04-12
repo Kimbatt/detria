@@ -189,10 +189,10 @@ class Triangulation
     // ...
 };
 
-template <typename Point>
+template <typename Point, typename Idx>
 struct DefaultTriangulationConfig
 {
-    using PointAdapter = DefaultPointAdapter<Point>;
+    using PointGetter = DefaultPointGetter<Point, Idx>;
 
     using Allocator = memory::DefaultAllocator;
 
@@ -210,7 +210,7 @@ Note that because a half-edge data structure is used (which uses two indices per
 
 Configuration:  
 The configuration allows you to customize even more parameters of the triangulation.
-- `PointAdapter` - Used to convert between point types, also more details about this in the next section.
+- `PointGetter` - Used to retrieve points using custom logic, or to convert between point types. More details about this in the next section.
 - `Collection` - You can use a custom collection instead of `std::vector`, if you need to.  
 The collection must have the basic functions of a collection, e.g. `size()`, `resize()`, indexing operator, etc.
 - `Allocator` - You can use a custom allocator instead of the default allocator (which uses the global `new` operator). More details about this in the "Custom allocators" section.
@@ -256,33 +256,29 @@ Alternatively, you can just create a new class, but then you'd need to set every
 # Custom point types
 You can use any point type:
 - If your point type has `x` and `y` fields, then it will automatically work.
-- Otherwise, you must declare a "point adapter" class, which will convert your point type to a point type that has `x` and `y` fields.  
+- Otherwise, you must declare a "point getter" class (or a lambda function), which retrieves a point from a point index. It must be able to convert your type to a type that has `x` and `y` fields.  
 Let's say that we store points as `std::array<float, 2>`.
-Then we can define the following point adapter class:
+Then we can define the following point getter class:
 ```cpp
 // Simple example
-struct PointAdapterFromStdArray
+struct PointGetterFromStdArray
 {
-    static detria::Vec2<float> adapt(const std::array<float, 2>& point)
+    PointGetterFromStdArray(const std::vector<std::array<float, 2>>& points) :
+        _points(&points)
     {
-        return detria::Vec2<float>{ .x = point[0], .y = point[1] };
     }
+   
+    detria::PointF operator()(Idx idx) const
+    {
+        const std::array<float, 2>& point = (*_points)[size_t(idx)];
+        return detria::PointF{ .x = point[0], .y = point[1] };
+    }
+
+private:
+    const std::vector<std::array<float, 2>>* _points;
 };
 ```
-For better performance, you can also reinterpret your point class:
-```cpp
-// More advanced example
-struct PointAdapterFromStdArrayWithReinterpret
-{
-    inline static const detria::Vec2<float>& adapt(const std::array<float, 2>& point)
-    {
-        // The types must have the same layout, and all kinds of that stuff
-        // Only do this if you know what you're doing
-        return *reinterpret_cast<const detria::Vec2<float>*>(point.data());
-    }
-};
-```
-Point adapter classes must have a static function named `adapt`, that has a single parameter (the custom point type), and returns anything that has an `x` and an `y` field.  
+Point getter classes must have a `Point operator()(Idx) const` function, that has a single parameter (the point index), and returns anything that has an `x` and an `y` field. You can also use a lambda function.  
 The input parameter and the returned value can both be const references.
 
 ## Integer coordinates
