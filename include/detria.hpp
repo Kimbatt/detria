@@ -1134,9 +1134,9 @@ namespace detria
             Scalar detright = (pa1 - pc1) * (pb0 - pc0);
             Scalar det = detleft - detright;
 
-            det = [&]()
+            if constexpr (Robust && !IsInteger)
             {
-                if constexpr (Robust && !IsInteger)
+                do
                 {
                     Scalar detsum = Scalar(0);
 
@@ -1144,7 +1144,7 @@ namespace detria
                     {
                         if (detright <= Scalar(0))
                         {
-                            return det;
+                            break;
                         }
                         else
                         {
@@ -1155,7 +1155,7 @@ namespace detria
                     {
                         if (detright >= Scalar(0))
                         {
-                            return det;
+                            break;
                         }
                         else
                         {
@@ -1164,25 +1164,20 @@ namespace detria
                     }
                     else
                     {
-                        return det;
+                        break;
                     }
 
                     Scalar errbound = predicates::errorBounds<Scalar>.ccwerrboundA * detsum;
-                    if (predicates::Absolute(det) >= errbound) DETRIA_LIKELY
+                    if (predicates::Absolute(det) < errbound) DETRIA_UNLIKELY
                     {
-                        return det;
+                        Scalar pa[2]{ a.x, a.y };
+                        Scalar pb[2]{ b.x, b.y };
+                        Scalar pc[2]{ c.x, c.y };
+                        det = predicates::orient2dadapt(pa, pb, pc, detsum);
                     }
-
-                    Scalar pa[2]{ a.x, a.y };
-                    Scalar pb[2]{ b.x, b.y };
-                    Scalar pc[2]{ c.x, c.y };
-                    return predicates::orient2dadapt(pa, pb, pc, detsum);
                 }
-                else
-                {
-                    return det;
-                }
-            }();
+                while (false);
+            }
 
             if (det < Scalar(0))
             {
@@ -1296,32 +1291,23 @@ namespace detria
 
             Scalar det = alift * (bdxcdy - cdxbdy) + blift * (cdxady - adxcdy) + clift * (adxbdy - bdxady);
 
-            det = [&]()
+            if constexpr (Robust && !IsInteger)
             {
-                if constexpr (Robust && !IsInteger)
+                Scalar permanent =
+                    (predicates::Absolute(bdxcdy) + predicates::Absolute(cdxbdy)) * alift +
+                    (predicates::Absolute(cdxady) + predicates::Absolute(adxcdy)) * blift +
+                    (predicates::Absolute(adxbdy) + predicates::Absolute(bdxady)) * clift;
+
+                Scalar errbound = predicates::errorBounds<Scalar>.iccerrboundA * permanent;
+                if (predicates::Absolute(det) <= errbound) DETRIA_UNLIKELY
                 {
-                    Scalar permanent = 
-                        (predicates::Absolute(bdxcdy) + predicates::Absolute(cdxbdy)) * alift +
-                        (predicates::Absolute(cdxady) + predicates::Absolute(adxcdy)) * blift +
-                        (predicates::Absolute(adxbdy) + predicates::Absolute(bdxady)) * clift;
-
-                    Scalar errbound = predicates::errorBounds<Scalar>.iccerrboundA * permanent;
-                    if (predicates::Absolute(det) > errbound) DETRIA_LIKELY
-                    {
-                        return det;
-                    }
-
                     Scalar pa[2]{ a.x, a.y };
                     Scalar pb[2]{ b.x, b.y };
                     Scalar pc[2]{ c.x, c.y };
                     Scalar pd[2]{ d.x, d.y };
-                    return predicates::incircleadapt(pa, pb, pc, pd, permanent);
+                    det = predicates::incircleadapt(pa, pb, pc, pd, permanent);
                 }
-                else
-                {
-                    return det;
-                }
-            }();
+            }
 
             if (det > Scalar(0))
             {
