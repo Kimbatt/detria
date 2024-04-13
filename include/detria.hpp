@@ -1035,7 +1035,7 @@ namespace detria
 #undef DETRIA_Two_One_Diff
 #undef DETRIA_Two_Two_Sum
 #undef DETRIA_Two_Two_Diff
-    };
+    }
 
     namespace detail
     {
@@ -1058,8 +1058,8 @@ namespace detria
             }
             else
             {
-                return b > Scalar(0) && a > std::numeric_limits<Scalar>::max() - b
-                    || b < Scalar(0) && a < std::numeric_limits<Scalar>::min() - b;
+                return (b > Scalar(0) && a > std::numeric_limits<Scalar>::max() - b)
+                    || (b < Scalar(0) && a < std::numeric_limits<Scalar>::min() - b);
             }
         }
 
@@ -1072,8 +1072,8 @@ namespace detria
             }
             else
             {
-                return b < Scalar(0) && a > std::numeric_limits<Scalar>::max() + b
-                    || b > Scalar(0) && a < std::numeric_limits<Scalar>::min() + b;
+                return (b < Scalar(0) && a > std::numeric_limits<Scalar>::max() + b)
+                    || (b > Scalar(0) && a < std::numeric_limits<Scalar>::min() + b);
             }
         }
 
@@ -1086,10 +1086,10 @@ namespace detria
             }
             else
             {
-                return a > 0 && b > 0 && a > std::numeric_limits<Scalar>::max() / b
-                    || a > 0 && b < 0 && b < std::numeric_limits<Scalar>::min() / a
-                    || a < 0 && b > 0 && a < std::numeric_limits<Scalar>::min() / b
-                    || a < 0 && b < 0 && b < std::numeric_limits<Scalar>::max() / a;
+                return (a > 0 && b > 0 && a > std::numeric_limits<Scalar>::max() / b)
+                    || (a > 0 && b < 0 && b < std::numeric_limits<Scalar>::min() / a)
+                    || (a < 0 && b > 0 && a < std::numeric_limits<Scalar>::min() / b)
+                    || (a < 0 && b < 0 && b < std::numeric_limits<Scalar>::max() / a);
             }
         }
 #endif
@@ -2817,6 +2817,7 @@ namespace detria
         Triangulation(Allocator allocator = { }) :
             _allocator(allocator),
             _pointGetter(),
+            _numPoints(0),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_polylines),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_manuallyConstrainedEdges),
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_autoDetectedPolylineTypes),
@@ -2836,6 +2837,9 @@ namespace detria
             DETRIA_INIT_COLLECTION_WITH_ALLOCATOR(_delaunayCheckStack)
         {
         }
+
+        Triangulation(const Triangulation&) = delete;
+        Triangulation operator=(const Triangulation&) = delete;
 
         // If the triangulation failed, this function returns the type of the error that occured
         TriangulationError getError() const
@@ -3733,7 +3737,8 @@ namespace detria
                             };
 
                             break;
-                        DETRIA_UNLIKELY default:
+                        DETRIA_UNLIKELY case EdgeType::NotConstrained:
+                        DETRIA_UNLIKELY case EdgeType::MAX_EDGE_TYPE:
                             DETRIA_ASSERT(false);
                             break;
                     }

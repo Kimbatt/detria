@@ -6,7 +6,7 @@
 #include <chrono>
 #include <utility>
 
-#include "../include/detria.hpp"
+#include <detria.hpp>
 
 
 template <typename Point, typename Idx>
@@ -104,7 +104,7 @@ bool ParseFileP2T(const std::filesystem::path& filePath, std::vector<Point>& out
     {
         Polyline,
         Hole,
-        Steiner,
+        Steiner
     };
 
     ParserState state = ParserState::Polyline;
@@ -173,8 +173,6 @@ bool ParseFileP2T(const std::filesystem::path& filePath, std::vector<Point>& out
                     case ParserState::Steiner:
                         out_steiner.push_back(point);
                         break;
-                    default:
-                        return false;
                 }
             }
         }
@@ -572,8 +570,8 @@ static void fractal(int depth, Scalar cx, Scalar cy, Scalar size, Scalar thickne
 
     if (depth != 0)
     {
-        constexpr Scalar sizeFactor = 0.35f;
-        constexpr Scalar spacingFactor = 0.425f;
+        constexpr Scalar sizeFactor = 0.35;
+        constexpr Scalar spacingFactor = 0.425;
 
         Scalar half = size * spacingFactor;
         fractal(depth - 1, cx - half, cy - half, size * sizeFactor, thickness * sizeFactor, points, polylines);
@@ -588,7 +586,7 @@ static bool FractalTest()
     std::vector<Point> points;
     std::vector<Polyline<Idx>> polylines;
 
-    fractal(6, 0.0f, 0.0f, 1.0f, 0.125f, points, polylines);
+    fractal(6, 0.0, 0.0, 1.0, 0.125, points, polylines);
 
     detria::Triangulation<Point, Idx> tri;
 
@@ -776,7 +774,7 @@ int main()
             successWithIntegerCoordinates = Triangulate(filePath, testExportFolder / folder, getIntegerPoints(allPoints), allPolylines, { });
         }
 
-        if (success == shouldFail || checkIntegerCoordinates && (successWithIntegerCoordinates == shouldFail))
+        if (success == shouldFail || (checkIntegerCoordinates && (successWithIntegerCoordinates == shouldFail)))
         {
             failTest(filePath.string());
         }

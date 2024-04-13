@@ -1,6 +1,14 @@
 mkdir build-linux
 cd build-linux
 
+set -e
+
+# clang++ debug
+rm CMakeCache.txt
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+make
+make clean
+
 # g++ debug
 rm CMakeCache.txt
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/g++
@@ -10,12 +18,6 @@ make clean
 # g++ release
 rm CMakeCache.txt
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/g++
-make
-make clean
-
-# clang++ debug
-rm CMakeCache.txt
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/clang++
 make
 make clean
 

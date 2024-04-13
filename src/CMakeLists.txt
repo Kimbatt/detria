@@ -10,5 +10,6 @@ add_executable(detria-test ${FILES_SRC})
 
 target_include_directories(detria-test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(detria-test PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(detria-test PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 set_target_properties(detria-test PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
