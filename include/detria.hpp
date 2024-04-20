@@ -2149,7 +2149,7 @@ namespace detria
                  *       \|/               \ /
                  *        *                 *
                  *        2                 2
-		 */
+                 */
 
                 // Setup all references
                 HalfEdge& edge = getEdge(edgeIndex);
@@ -2619,6 +2619,7 @@ namespace detria
             std::string getErrorMessage() const
             {
                 std::stringstream ss;
+                ss.precision(20);
                 ss << "Multiple input points had the same position (" << positionX << ", " << positionY
                     << "), at index " << idx0 << " and at index " << idx1;
                 return ss.str();
@@ -2840,6 +2841,7 @@ namespace detria
 
         Triangulation(const Triangulation&) = delete;
         Triangulation operator=(const Triangulation&) = delete;
+        Triangulation(Triangulation&&) = default;
 
         // If the triangulation failed, this function returns the type of the error that occured
         TriangulationError getError() const
@@ -2977,6 +2979,14 @@ namespace detria
 
             _error = TE_NoError{ };
             return true;
+        }
+
+        // Returns the number of all triangles created during the triangulation, can be used e.g. to reserve memory for the results
+        // Note that this number is usually greater than the number of "interesting" triangles,
+        // since it contains the interior, hole, and convex hull triangles as well
+        size_t getMaxNumTriangles() const
+        {
+            return _resultTriangles.size();
         }
 
         // Iterate over every interior triangle of the triangulation

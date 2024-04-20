@@ -5,25 +5,25 @@ set -e
 
 # clang++ debug
 rm CMakeCache.txt
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DDETRIA_BUILD_BENCHMARKS=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++
 make
 make clean
 
 # g++ debug
 rm CMakeCache.txt
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/g++
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DDETRIA_BUILD_BENCHMARKS=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++
 make
 make clean
 
 # g++ release
 rm CMakeCache.txt
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/g++
+cmake .. -DCMAKE_BUILD_TYPE=Release -DDETRIA_BUILD_BENCHMARKS=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++
 make
 make clean
 
 # clang++ release
 rm CMakeCache.txt
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+cmake .. -DCMAKE_BUILD_TYPE=Release -DDETRIA_BUILD_BENCHMARKS=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++
 make
 
 # run tests
