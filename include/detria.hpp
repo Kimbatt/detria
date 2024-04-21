@@ -3073,6 +3073,79 @@ namespace detria
             return { };
         }
 
+        // Generates a text representation of the triangulation input, which can be used for debugging, or for reporting an issue
+        std::string generateDebugFile() const
+        {
+            // File structure:
+            // numVertices numPolylines numManuallyConstrainedEdges
+            // for numPolylines: numVerticesInPolyline
+            // for numPolylines: polylineType (0 - outline, 1 - hole, 2 - auto detect)
+            // list of vertices (x, y)
+            // list of vertices in polylines (index)
+            // list of manually constrained edges (index, index)
+
+            std::stringstream ss;
+            ss.precision(20);
+
+            size_t numPoints = _numPoints;
+            size_t numPolylines = _polylines.size();
+            size_t numManuallyConstrainedEdges = _manuallyConstrainedEdges.size();
+
+            ss << numPoints << ' ' << numPolylines << ' ' << numManuallyConstrainedEdges << std::endl;
+
+            for (const PolylineData& data : _polylines)
+            {
+                ss << data.pointIndices.size() << ' ';
+            }
+            ss << std::endl;
+
+            for (const PolylineData& data : _polylines)
+            {
+                switch (data.type)
+                {
+                    case EdgeType::Outline:
+                        ss << '0';
+                        break;
+                    case EdgeType::Hole:
+                        ss << '1';
+                        break;
+                    case EdgeType::AutoDetect:
+                        ss << '2';
+                        break;
+
+                    case EdgeType::NotConstrained:
+                    case EdgeType::ManuallyConstrained:
+                    case EdgeType::MAX_EDGE_TYPE:
+                        break;
+                }
+
+                ss << ' ';
+            }
+            ss << std::endl;
+
+            for (size_t i = 0; i < _numPoints; ++i)
+            {
+                Point point = getPoint(Idx(i));
+                ss << point.x << ' ' << point.y << std::endl;
+            }
+
+            for (const PolylineData& data : _polylines)
+            {
+                size_t numPointIndices = data.pointIndices.size();
+                for (size_t i = 0; i < numPointIndices; ++i)
+                {
+                    ss << data.pointIndices[i] << std::endl;
+                }
+            }
+
+            for (const Vec2<Idx>& edge : _manuallyConstrainedEdges)
+            {
+                ss << edge.x << ' ' << edge.y << std::endl;
+            }
+
+            return ss.str();
+        }
+
     private:
         bool fail(const TriangulationErrorData& errorData)
         {
