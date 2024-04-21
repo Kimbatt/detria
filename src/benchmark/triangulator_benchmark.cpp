@@ -84,16 +84,18 @@ void TriangulatorBenchmark::runBenchmark(std::string name, const TriangulationIn
 
     // Print results
     {
-        std::vector<std::vector<std::string>> columns(4);
-
         constexpr size_t triangulatorNameColumn = 0;
         constexpr size_t averageTimeColumn = 1;
         constexpr size_t medianTimeColumn = 2;
-        constexpr size_t totalTimeColumn = 3;
+        constexpr size_t shortestTimeColumn = 3;
+        constexpr size_t totalTimeColumn = 4;
+        constexpr size_t numColumns = 5;
+        std::vector<std::vector<std::string>> columns(numColumns);
 
         columns[triangulatorNameColumn].emplace_back("triangulator");
         columns[averageTimeColumn].emplace_back("average time");
         columns[medianTimeColumn].emplace_back("median time");
+        columns[shortestTimeColumn].emplace_back("shortest time");
         columns[totalTimeColumn].emplace_back("total time");
 
         for (auto& result : run.results)
@@ -104,10 +106,13 @@ void TriangulatorBenchmark::runBenchmark(std::string name, const TriangulationIn
             {
                 columns[averageTimeColumn].emplace_back("*not supported*");
                 columns[medianTimeColumn].emplace_back();
+                columns[shortestTimeColumn].emplace_back();
                 columns[totalTimeColumn].emplace_back();
             }
             else
             {
+                std::sort(result.times.begin(), result.times.end());
+
                 Clock::duration totalTime{ };
 
                 for (const auto& time : result.times)
@@ -117,12 +122,20 @@ void TriangulatorBenchmark::runBenchmark(std::string name, const TriangulationIn
 
                 Clock::duration averageTime = totalTime / result.times.size();
 
+                Clock::duration medianTime{ };
                 size_t middleIndex = result.times.size() / 2;
-                auto middleIter = std::next(result.times.begin(), middleIndex);
-                std::nth_element(result.times.begin(), middleIter, result.times.end());
+                if (result.times.size() % 2 == 0)
+                {
+                    medianTime = (result.times[middleIndex - 1] + result.times[middleIndex]) / 2;
+                }
+                else
+                {
+                    medianTime = result.times[middleIndex];
+                }
 
                 columns[averageTimeColumn].emplace_back(DurationToString(averageTime));
-                columns[medianTimeColumn].emplace_back(DurationToString(*middleIter));
+                columns[medianTimeColumn].emplace_back(DurationToString(medianTime));
+                columns[shortestTimeColumn].emplace_back(DurationToString(result.times[0]));
                 columns[totalTimeColumn].emplace_back(DurationToString(totalTime));
             }
         }
@@ -144,7 +157,7 @@ void TriangulatorBenchmark::runBenchmark(std::string name, const TriangulationIn
         std::stringstream ss;
         ss.precision(20);
 
-        ss << run.name << " - "
+        ss << "### " << run.name << " - "
             << run.vertexCount << " vertices, " << run.triangleCount << " triangles"
             << " (measured " << runCount << " times)" << std::endl << std::endl;
 
@@ -203,6 +216,7 @@ void TriangulatorBenchmark::runBenchmark(std::string name, const TriangulationIn
             ss << std::endl;
         }
         ss << std::endl;
+        ss << "---" << std::endl;
 
         std::cout << ss.str() << std::endl << std::endl;
     }

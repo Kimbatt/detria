@@ -90,5 +90,8 @@ These might be added in the future:
 There are currently no plans to implement the following:
 - Adding new points to the triangulation (e.g. conforming delaunay triangulation, triangulation refinement, resolve edge intersections)
 
+## Benchmarks
+See performance comparisons with other triangulation libraries [here](BENCHMARKS.md).
+
 ## License
 Licensed under either the [WTFPL](LICENSE.txt) or the [MIT License](LICENSE-MIT.txt), at your choice.

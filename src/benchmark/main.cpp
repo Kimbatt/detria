@@ -41,8 +41,9 @@ static void benchmarkRandomPoints(TriangulatorBenchmark& benchmark)
 
     std::vector<RandomPointBenchmark> numRandomPoints =
     {
-        RandomPointBenchmark{ .numPoints = 100, .numRuns = 1000 },
-        RandomPointBenchmark{ .numPoints = 10'000, .numRuns = 100 },
+        RandomPointBenchmark{ .numPoints = 100, .numRuns = 10000 },
+        RandomPointBenchmark{ .numPoints = 1'000, .numRuns = 500 },
+        RandomPointBenchmark{ .numPoints = 10'000, .numRuns = 200 },
         RandomPointBenchmark{ .numPoints = 100'000, .numRuns = 10 },
         RandomPointBenchmark{ .numPoints = 1'000'000, .numRuns = 2 }
     };

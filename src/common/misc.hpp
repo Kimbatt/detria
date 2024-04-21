@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <chrono>
 #include <string>
+#include <sstream>
 
 namespace util
 {
@@ -12,8 +13,10 @@ namespace util
     static std::string DurationToString(std::chrono::duration<Rep, Period> duration)
     {
         double milliseconds = std::chrono::duration<double, std::milli>(duration).count();
-        std::string str = std::to_string(milliseconds);
-        str += " ms";
-        return str;
+        std::stringstream ss;
+        ss.precision(2);
+        ss << std::fixed;
+        ss << milliseconds << " ms";
+        return ss.str();
     }
 }

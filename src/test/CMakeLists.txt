@@ -1,4 +1,4 @@
-if (MSVC)
+if (MSVC AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /Wall /WX")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4459") # declaration of 'type' hides global declaration
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820") # x bytes padding added after data member y
@@ -6,14 +6,20 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4710") # function not inlined
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4711") # function selected for automatic inline expansion
 else ()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wpedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wundef -fdiagnostics-show-option -Wconversion")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wpedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wundef -Wconversion")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         # Ignored warnings:
-        # -Wno-c++98-compat - the project requires C++17 or later
+        # -Wno-c++98-compat, -Wno-c++98-compat-pedantic - the project requires C++17 or later
         # -Wno-padded - this is more like a diagnostic message, adding padding to structs is not a problem
         #               also, the struct layouts can change depending un used types
         # -Wno-float-equal - exact floating point comparisons are required for robust predicates
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconditional-uninitialized -Weverything -Wmost -Wno-c++98-compat -Wno-padded -Wno-float-equal")
+        # -Wno-unsafe-buffer-usage - pointers are used in the project
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconditional-uninitialized -Weverything -Wmost -Wno-c++98-compat -Wno-padded -Wno-float-equal -Wno-c++98-compat-pedantic -Wno-unsafe-buffer-usage")
+    endif()
+    if (EMSCRIPTEN)
+        # Ignored warnings for emscripten:
+        # -Wno-unused-template - file reading related functions are not used
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-template")
     endif()
 endif ()
 

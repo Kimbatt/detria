@@ -39,6 +39,10 @@ Clock::duration DetriaTriangulator::triangulateAndMeasure(const TriangulationInp
     Clock::time_point start = Clock::now();
 
     bool success = triangulation.triangulate(true);
+    if (!success)
+    {
+        return { };
+    }
 
     resultTriangles.reserve(triangulation.getMaxNumTriangles());
 
