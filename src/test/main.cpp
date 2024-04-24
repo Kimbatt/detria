@@ -59,7 +59,7 @@ bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::p
 
         // If there are no polylines, then export the entire triangulation
         // Otherwise, only export the interior triangles
-        detria::TriangleLocation exportLocation = polylines.empty() ? detria::TriangleLocation::All : detria::TriangleLocation::Interior;
+        detria::TriangleLocationMask exportLocation = polylines.empty() ? detria::TriangleLocationMask::All : detria::TriangleLocationMask::Interior;
 
         std::vector<detria::Triangle<Idx>> triangles;
         bool correctTriangleOrientation = true;

@@ -14,7 +14,8 @@ else ()
         #               also, the struct layouts can change depending un used types
         # -Wno-float-equal - exact floating point comparisons are required for robust predicates
         # -Wno-unsafe-buffer-usage - pointers are used in the project
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wconditional-uninitialized -Weverything -Wmost -Wno-c++98-compat -Wno-padded -Wno-float-equal -Wno-c++98-compat-pedantic -Wno-unsafe-buffer-usage")
+        # Also, -Wno-error=unknown-warning-option is used, because -Wno-unsafe-buffer-usage doesn't exist in older Clang versions
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unknown-warning-option -Wconditional-uninitialized -Weverything -Wmost -Wno-c++98-compat -Wno-padded -Wno-float-equal -Wno-c++98-compat-pedantic -Wno-unsafe-buffer-usage")
     endif()
     if (EMSCRIPTEN)
         # Ignored warnings for emscripten:
