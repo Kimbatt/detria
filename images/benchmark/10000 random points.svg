@@ -1,0 +1,222 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="970" height="460">
+
+<style>
+text, .has-tooltip + *
+{
+    pointer-events: none;
+}
+
+.has-tooltip:not(:hover) + *
+{
+    display: none;
+}
+</style>
+
+<rect x="0" y="0" width="970" height="460" fill="#121212" />
+<text x="10" y="40" font-size="30" fill="white" >10000 random points</text>
+<text x="10" y="80" font-size="20" fill="white" >10004 vertices, 20002 triangles (measured 200 times)</text>
+<line x1="130.5" y1="100" x2="130.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="930.5" y1="100" x2="930.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="10" y1="379.5" x2="930" y2="379.5" stroke="white" stroke-width="1" />
+<line x1="130.5" y1="380" x2="130.5" y2="390" stroke="white" stroke-width="1" />
+<text x="130.5" y="400" font-size="10" fill="white" text-anchor="middle" >4.5ms</text>
+<line x1="197.5" y1="380" x2="197.5" y2="390" stroke="white" stroke-width="1" />
+<text x="197.5" y="400" font-size="10" fill="white" text-anchor="middle" >5.4ms</text>
+<line x1="263.5" y1="380" x2="263.5" y2="390" stroke="white" stroke-width="1" />
+<text x="263.5" y="400" font-size="10" fill="white" text-anchor="middle" >6.3ms</text>
+<line x1="330.5" y1="380" x2="330.5" y2="390" stroke="white" stroke-width="1" />
+<text x="330.5" y="400" font-size="10" fill="white" text-anchor="middle" >7.2ms</text>
+<line x1="397.5" y1="380" x2="397.5" y2="390" stroke="white" stroke-width="1" />
+<text x="397.5" y="400" font-size="10" fill="white" text-anchor="middle" >8.1ms</text>
+<line x1="463.5" y1="380" x2="463.5" y2="390" stroke="white" stroke-width="1" />
+<text x="463.5" y="400" font-size="10" fill="white" text-anchor="middle" >9.0ms</text>
+<line x1="530.5" y1="380" x2="530.5" y2="390" stroke="white" stroke-width="1" />
+<text x="530.5" y="400" font-size="10" fill="white" text-anchor="middle" >9.9ms</text>
+<line x1="597.5" y1="380" x2="597.5" y2="390" stroke="white" stroke-width="1" />
+<text x="597.5" y="400" font-size="10" fill="white" text-anchor="middle" >10.8ms</text>
+<line x1="663.5" y1="380" x2="663.5" y2="390" stroke="white" stroke-width="1" />
+<text x="663.5" y="400" font-size="10" fill="white" text-anchor="middle" >11.7ms</text>
+<line x1="730.5" y1="380" x2="730.5" y2="390" stroke="white" stroke-width="1" />
+<text x="730.5" y="400" font-size="10" fill="white" text-anchor="middle" >12.6ms</text>
+<line x1="797.5" y1="380" x2="797.5" y2="390" stroke="white" stroke-width="1" />
+<text x="797.5" y="400" font-size="10" fill="white" text-anchor="middle" >13.5ms</text>
+<line x1="863.5" y1="380" x2="863.5" y2="390" stroke="white" stroke-width="1" />
+<text x="863.5" y="400" font-size="10" fill="white" text-anchor="middle" >14.4ms</text>
+<line x1="930.5" y1="380" x2="930.5" y2="390" stroke="white" stroke-width="1" />
+<text x="930.5" y="400" font-size="10" fill="white" text-anchor="middle" >15.3ms</text>
+<text x="530" y="435" font-size="16" fill="white" text-anchor="middle" >Triangulation time (milliseconds)</text>
+<text x="20" y="135" font-size="20" fill="white" dominant-baseline="middle" >detria</text>
+<line x1="10" y1="99.5" x2="930" y2="99.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 110)">
+<line x1="125" y1="10" x2="125" y2="40" stroke="white" stroke-width="2" />
+<line x1="174" y1="10" x2="174" y2="40" stroke="white" stroke-width="2" />
+<rect x="141" y="0" width="6" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="147" y="0" width="7" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="125" y1="25" x2="141" y2="25" stroke="white" stroke-width="2" />
+<line x1="154" y1="25" x2="174" y2="25" stroke="white" stroke-width="2" />
+<circle cx="174.53333333333333" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="174.88888888888886" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="179.3925925925926" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="179.53333333333333" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="182.37037037037032" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="185.03703703703704" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="185.95555555555552" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="189.47407407407405" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="192.3777777777778" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="202.28888888888886" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="207.15555555555554" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="207.8148148148148" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="208.82962962962966" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="237.02962962962965" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="238.9777777777778" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="258.2222222222222" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="309.3851851851852" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="366.8814814814814" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="381.91111111111104" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="473.37037037037027" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="698.6592592592592" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="205" font-size="20" fill="white" dominant-baseline="middle" >triangle</text>
+<line x1="10" y1="169.5" x2="930" y2="169.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 180)">
+<line x1="39" y1="10" x2="39" y2="40" stroke="white" stroke-width="2" />
+<line x1="67" y1="10" x2="67" y2="40" stroke="white" stroke-width="2" />
+<rect x="48" y="0" width="4" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="52" y="0" width="4" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="39" y1="25" x2="48" y2="25" stroke="white" stroke-width="2" />
+<line x1="56" y1="25" x2="67" y2="25" stroke="white" stroke-width="2" />
+<circle cx="67.42962962962964" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="71.53333333333333" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="79.88888888888889" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="85.03703703703701" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="91.37037037037038" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="365.9037037037037" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="382.3777777777778" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="473.32592592592596" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="575.5555555555554" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="717.7259259259258" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="275" font-size="20" fill="white" dominant-baseline="middle" >poly2tri</text>
+<line x1="10" y1="239.5" x2="930" y2="239.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 250)">
+<line x1="224" y1="10" x2="224" y2="40" stroke="white" stroke-width="2" />
+<line x1="264" y1="10" x2="264" y2="40" stroke="white" stroke-width="2" />
+<rect x="236" y="0" width="4" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="240" y="0" width="7" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="224" y1="25" x2="236" y2="25" stroke="white" stroke-width="2" />
+<line x1="247" y1="25" x2="264" y2="25" stroke="white" stroke-width="2" />
+<circle cx="265.11851851851856" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="265.49629629629624" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="265.562962962963" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="266.50370370370365" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="267.82222222222225" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="269.6074074074073" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="269.80000000000007" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="270.7259259259259" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="276.1703703703704" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="280.5555555555555" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="282.9333333333333" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="283.59999999999997" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="286.6296296296297" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="287.51851851851853" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="288.55555555555554" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="289.71851851851847" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="291.20000000000005" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="292.08148148148143" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="292.70370370370364" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="293.37777777777774" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="293.8962962962962" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="294.02962962962965" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="295.84444444444443" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="301.8518518518518" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="316.3037037037036" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="316.68148148148146" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="319.84444444444443" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="340.0888888888889" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="376.08148148148143" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="345" font-size="20" fill="white" dominant-baseline="middle" >cdt</text>
+<line x1="10" y1="309.5" x2="930" y2="309.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 320)">
+<line x1="501" y1="10" x2="501" y2="40" stroke="white" stroke-width="2" />
+<line x1="546" y1="10" x2="546" y2="40" stroke="white" stroke-width="2" />
+<rect x="514" y="0" width="5" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="519" y="0" width="8" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="501" y1="25" x2="514" y2="25" stroke="white" stroke-width="2" />
+<line x1="527" y1="25" x2="546" y2="25" stroke="white" stroke-width="2" />
+<circle cx="549.4666666666666" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="551.1333333333333" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="556.1703703703704" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="556.2592592592591" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="564.2444444444444" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="566.9407407407408" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="567" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="570.1185185185185" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="575.2222222222222" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="729.3037037037036" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<rect x="130" y="100" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 35)">
+<rect x="0" y="0" width="360" height="160" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >6.18ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >6.40ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >6.48ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >6.58ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >6.85ms</text>
+<text x="10" y="150" fill="white" >Max (including outliers):</text>
+<text x="240" y="150" fill="white" >13.93ms</text>
+</g>
+<rect x="130" y="170" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 105)">
+<rect x="0" y="0" width="360" height="160" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >5.03ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >5.15ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >5.20ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >5.25ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >5.41ms</text>
+<text x="10" y="150" fill="white" >Max (including outliers):</text>
+<text x="240" y="150" fill="white" >14.19ms</text>
+</g>
+<rect x="130" y="240" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 175)">
+<rect x="0" y="0" width="360" height="160" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >7.53ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >7.68ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >7.74ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >7.84ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >8.07ms</text>
+<text x="10" y="150" fill="white" >Max (including outliers):</text>
+<text x="240" y="150" fill="white" >9.58ms</text>
+</g>
+<rect x="130" y="310" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 245)">
+<rect x="0" y="0" width="360" height="160" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >11.26ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >11.44ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >11.51ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >11.61ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >11.87ms</text>
+<text x="10" y="150" fill="white" >Max (including outliers):</text>
+<text x="240" y="150" fill="white" >14.35ms</text>
+</g>
+</svg>

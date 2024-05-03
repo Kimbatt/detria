@@ -1,4 +1,8 @@
-if (MSVC AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_GENERATOR_TOOLSET STREQUAL ClangCL))
+    set(CLANG TRUE)
+endif()
+
+if (MSVC AND NOT CLANG)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /Wall /WX")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4459") # declaration of 'type' hides global declaration
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820") # x bytes padding added after data member y
@@ -7,7 +11,7 @@ if (MSVC AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4711") # function selected for automatic inline expansion
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wpedantic -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wundef -Wconversion")
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if (CLANG)
         # Ignored warnings:
         # -Wno-c++98-compat, -Wno-c++98-compat-pedantic - the project requires C++17 or later
         # -Wno-padded - this is more like a diagnostic message, adding padding to structs is not a problem

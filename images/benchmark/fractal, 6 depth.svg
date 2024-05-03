@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="970" height="460">
+
+<style>
+text, .has-tooltip + *
+{
+    pointer-events: none;
+}
+
+.has-tooltip:not(:hover) + *
+{
+    display: none;
+}
+</style>
+
+<rect x="0" y="0" width="970" height="460" fill="#121212" />
+<text x="10" y="40" font-size="30" fill="white" >fractal, 6 depth</text>
+<text x="10" y="80" font-size="20" fill="white" >21844 vertices, 15290 triangles (measured 50 times)</text>
+<line x1="130.5" y1="100" x2="130.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="930.5" y1="100" x2="930.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="10" y1="379.5" x2="930" y2="379.5" stroke="white" stroke-width="1" />
+<line x1="130.5" y1="380" x2="130.5" y2="390" stroke="white" stroke-width="1" />
+<text x="130.5" y="400" font-size="10" fill="white" text-anchor="middle" >25ms</text>
+<line x1="203.5" y1="380" x2="203.5" y2="390" stroke="white" stroke-width="1" />
+<text x="203.5" y="400" font-size="10" fill="white" text-anchor="middle" >30ms</text>
+<line x1="275.5" y1="380" x2="275.5" y2="390" stroke="white" stroke-width="1" />
+<text x="275.5" y="400" font-size="10" fill="white" text-anchor="middle" >35ms</text>
+<line x1="348.5" y1="380" x2="348.5" y2="390" stroke="white" stroke-width="1" />
+<text x="348.5" y="400" font-size="10" fill="white" text-anchor="middle" >40ms</text>
+<line x1="421.5" y1="380" x2="421.5" y2="390" stroke="white" stroke-width="1" />
+<text x="421.5" y="400" font-size="10" fill="white" text-anchor="middle" >45ms</text>
+<line x1="494.5" y1="380" x2="494.5" y2="390" stroke="white" stroke-width="1" />
+<text x="494.5" y="400" font-size="10" fill="white" text-anchor="middle" >50ms</text>
+<line x1="566.5" y1="380" x2="566.5" y2="390" stroke="white" stroke-width="1" />
+<text x="566.5" y="400" font-size="10" fill="white" text-anchor="middle" >55ms</text>
+<line x1="639.5" y1="380" x2="639.5" y2="390" stroke="white" stroke-width="1" />
+<text x="639.5" y="400" font-size="10" fill="white" text-anchor="middle" >60ms</text>
+<line x1="712.5" y1="380" x2="712.5" y2="390" stroke="white" stroke-width="1" />
+<text x="712.5" y="400" font-size="10" fill="white" text-anchor="middle" >65ms</text>
+<line x1="785.5" y1="380" x2="785.5" y2="390" stroke="white" stroke-width="1" />
+<text x="785.5" y="400" font-size="10" fill="white" text-anchor="middle" >70ms</text>
+<line x1="857.5" y1="380" x2="857.5" y2="390" stroke="white" stroke-width="1" />
+<text x="857.5" y="400" font-size="10" fill="white" text-anchor="middle" >75ms</text>
+<line x1="930.5" y1="380" x2="930.5" y2="390" stroke="white" stroke-width="1" />
+<text x="930.5" y="400" font-size="10" fill="white" text-anchor="middle" >80ms</text>
+<text x="530" y="435" font-size="16" fill="white" text-anchor="middle" >Triangulation time (milliseconds)</text>
+<text x="20" y="135" font-size="20" fill="white" dominant-baseline="middle" >detria</text>
+<line x1="10" y1="99.5" x2="930" y2="99.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 110)">
+<line x1="476" y1="10" x2="476" y2="40" stroke="white" stroke-width="2" />
+<line x1="537" y1="10" x2="537" y2="40" stroke="white" stroke-width="2" />
+<rect x="485" y="0" width="7" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="492" y="0" width="14" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="476" y1="25" x2="485" y2="25" stroke="white" stroke-width="2" />
+<line x1="506" y1="25" x2="537" y2="25" stroke="white" stroke-width="2" />
+<circle cx="548.2909090909092" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="553.9723636363636" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="597.776" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="652.3112727272728" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="753.6145454545456" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="205" font-size="20" fill="white" dominant-baseline="middle" >triangle</text>
+<line x1="10" y1="169.5" x2="930" y2="169.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 180)">
+<line x1="28" y1="10" x2="28" y2="40" stroke="white" stroke-width="2" />
+<line x1="64" y1="10" x2="64" y2="40" stroke="white" stroke-width="2" />
+<rect x="31" y="0" width="2" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="33" y="0" width="11" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="28" y1="25" x2="31" y2="25" stroke="white" stroke-width="2" />
+<line x1="44" y1="25" x2="64" y2="25" stroke="white" stroke-width="2" />
+<circle cx="73.29600000000002" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="101.13018181818182" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="102.09309090909093" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="103.9970909090909" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="140.2065454545455" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="172.29672727272725" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="275" font-size="20" fill="white" dominant-baseline="middle" >poly2tri</text>
+<line x1="10" y1="239.5" x2="930" y2="239.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 250)">
+<text x="20" y="25" font-size="20" fill="white" dominant-baseline="middle" font-style="italic" >Not supported</text>
+</g>
+<text x="20" y="345" font-size="20" fill="white" dominant-baseline="middle" >cdt</text>
+<line x1="10" y1="309.5" x2="930" y2="309.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 320)">
+<line x1="421" y1="10" x2="421" y2="40" stroke="white" stroke-width="2" />
+<line x1="515" y1="10" x2="515" y2="40" stroke="white" stroke-width="2" />
+<rect x="427" y="0" width="10" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="437" y="0" width="25" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="421" y1="25" x2="427" y2="25" stroke="white" stroke-width="2" />
+<line x1="462" y1="25" x2="515" y2="25" stroke="white" stroke-width="2" />
+<circle cx="521.712" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="523.6" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="540.8698181818182" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<rect x="130" y="100" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 35)">
+<rect x="0" y="0" width="360" height="160" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >57.71ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >58.34ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >58.82ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >59.77ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >61.91ms</text>
+<text x="10" y="150" fill="white" >Max (including outliers):</text>
+<text x="240" y="150" fill="white" >76.81ms</text>
+</g>
+<rect x="130" y="170" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 105)">
+<rect x="0" y="0" width="360" height="160" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >26.94ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >27.15ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >27.26ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >28.05ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >29.39ms</text>
+<text x="10" y="150" fill="white" >Max (including outliers):</text>
+<text x="240" y="150" fill="white" >36.85ms</text>
+</g>
+<rect x="130" y="310" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 245)">
+<rect x="0" y="0" width="360" height="160" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >53.92ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >54.33ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >55.05ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >56.77ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >60.43ms</text>
+<text x="10" y="150" fill="white" >Max (including outliers):</text>
+<text x="240" y="150" fill="white" >62.18ms</text>
+</g>
+</svg>

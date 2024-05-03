@@ -26,6 +26,8 @@ FetchContent_MakeAvailable(poly2tri cdt)
 
 add_executable(detria-benchmark
     main.cpp
+    boxplot.cpp
+    boxplot.h
     triangulator_benchmark.h
     triangulator_benchmark.cpp
     impl/detria.cpp

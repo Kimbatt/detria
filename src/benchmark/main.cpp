@@ -41,11 +41,10 @@ static void benchmarkRandomPoints(TriangulatorBenchmark& benchmark)
 
     std::vector<RandomPointBenchmark> numRandomPoints =
     {
-        RandomPointBenchmark{ .numPoints = 100, .numRuns = 10000 },
         RandomPointBenchmark{ .numPoints = 1'000, .numRuns = 500 },
         RandomPointBenchmark{ .numPoints = 10'000, .numRuns = 200 },
         RandomPointBenchmark{ .numPoints = 100'000, .numRuns = 10 },
-        RandomPointBenchmark{ .numPoints = 1'000'000, .numRuns = 2 }
+        RandomPointBenchmark{ .numPoints = 1'000'000, .numRuns = 3 }
     };
 
     for (const auto& data : numRandomPoints)
@@ -70,7 +69,6 @@ static void benchmarkFractal(TriangulatorBenchmark& benchmark)
 
     std::vector<FractalBenchmark> benchmarkData =
     {
-        FractalBenchmark{ .depth = 2, .numRuns = 5000 },
         FractalBenchmark{ .depth = 4, .numRuns = 500 },
         FractalBenchmark{ .depth = 6, .numRuns = 50 },
         FractalBenchmark{ .depth = 8, .numRuns = 5 }
@@ -166,6 +164,14 @@ int main()
     benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Antarctica.txt", 100);
     benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Greenland.txt", 100);
     benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Indonesia.txt", 100);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Afghanistan.txt", 500);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Bolivia.txt", 500);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Guinea.txt", 500);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Kyrgyzstan.txt", 500);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Laos.txt", 500);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Poland.txt", 500);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Republic of the Congo.txt", 500);
+    benchmarkFileDetriaFormat(benchmark, testFolder / "natural-earth-countries" / "Zambia.txt", 500);
     benchmarkFileP2TFormat(benchmark, testFolder / "p2t" / "debug2.dat", 100);
     benchmarkFileP2TFormat(benchmark, testFolder / "p2t" / "city.dat", 200);
 

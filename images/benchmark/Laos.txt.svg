@@ -1,0 +1,349 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="970" height="460">
+
+<style>
+text, .has-tooltip + *
+{
+    pointer-events: none;
+}
+
+.has-tooltip:not(:hover) + *
+{
+    display: none;
+}
+</style>
+
+<rect x="0" y="0" width="970" height="460" fill="#121212" />
+<text x="10" y="40" font-size="30" fill="white" >Laos.txt</text>
+<text x="10" y="80" font-size="20" fill="white" >1768 vertices, 1766 triangles (measured 500 times)</text>
+<line x1="130.5" y1="100" x2="130.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="930.5" y1="100" x2="930.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="10" y1="379.5" x2="930" y2="379.5" stroke="white" stroke-width="1" />
+<line x1="130.5" y1="380" x2="130.5" y2="390" stroke="white" stroke-width="1" />
+<text x="130.5" y="400" font-size="10" fill="white" text-anchor="middle" >0.8ms</text>
+<line x1="192.5" y1="380" x2="192.5" y2="390" stroke="white" stroke-width="1" />
+<text x="192.5" y="400" font-size="10" fill="white" text-anchor="middle" >1.0ms</text>
+<line x1="253.5" y1="380" x2="253.5" y2="390" stroke="white" stroke-width="1" />
+<text x="253.5" y="400" font-size="10" fill="white" text-anchor="middle" >1.2ms</text>
+<line x1="315.5" y1="380" x2="315.5" y2="390" stroke="white" stroke-width="1" />
+<text x="315.5" y="400" font-size="10" fill="white" text-anchor="middle" >1.4ms</text>
+<line x1="376.5" y1="380" x2="376.5" y2="390" stroke="white" stroke-width="1" />
+<text x="376.5" y="400" font-size="10" fill="white" text-anchor="middle" >1.6ms</text>
+<line x1="438.5" y1="380" x2="438.5" y2="390" stroke="white" stroke-width="1" />
+<text x="438.5" y="400" font-size="10" fill="white" text-anchor="middle" >1.8ms</text>
+<line x1="499.5" y1="380" x2="499.5" y2="390" stroke="white" stroke-width="1" />
+<text x="499.5" y="400" font-size="10" fill="white" text-anchor="middle" >2.0ms</text>
+<line x1="561.5" y1="380" x2="561.5" y2="390" stroke="white" stroke-width="1" />
+<text x="561.5" y="400" font-size="10" fill="white" text-anchor="middle" >2.2ms</text>
+<line x1="622.5" y1="380" x2="622.5" y2="390" stroke="white" stroke-width="1" />
+<text x="622.5" y="400" font-size="10" fill="white" text-anchor="middle" >2.4ms</text>
+<line x1="684.5" y1="380" x2="684.5" y2="390" stroke="white" stroke-width="1" />
+<text x="684.5" y="400" font-size="10" fill="white" text-anchor="middle" >2.6ms</text>
+<line x1="745.5" y1="380" x2="745.5" y2="390" stroke="white" stroke-width="1" />
+<text x="745.5" y="400" font-size="10" fill="white" text-anchor="middle" >2.8ms</text>
+<line x1="807.5" y1="380" x2="807.5" y2="390" stroke="white" stroke-width="1" />
+<text x="807.5" y="400" font-size="10" fill="white" text-anchor="middle" >3.0ms</text>
+<line x1="868.5" y1="380" x2="868.5" y2="390" stroke="white" stroke-width="1" />
+<text x="868.5" y="400" font-size="10" fill="white" text-anchor="middle" >3.2ms</text>
+<line x1="930.5" y1="380" x2="930.5" y2="390" stroke="white" stroke-width="1" />
+<text x="930.5" y="400" font-size="10" fill="white" text-anchor="middle" >3.4ms</text>
+<text x="530" y="435" font-size="16" fill="white" text-anchor="middle" >Triangulation time (milliseconds)</text>
+<text x="20" y="135" font-size="20" fill="white" dominant-baseline="middle" >detria</text>
+<line x1="10" y1="99.5" x2="930" y2="99.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 110)">
+<line x1="35" y1="10" x2="35" y2="40" stroke="white" stroke-width="2" />
+<line x1="46" y1="10" x2="46" y2="40" stroke="white" stroke-width="2" />
+<rect x="39" y="0" width="1" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="40" y="0" width="2" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="35" y1="25" x2="39" y2="25" stroke="white" stroke-width="2" />
+<line x1="42" y1="25" x2="46" y2="25" stroke="white" stroke-width="2" />
+<circle cx="31.353846153846142" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="31.630769230769225" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="31.630769230769225" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="31.78461538461536" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="31.90769230769227" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="32.06153846153844" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="32.30769230769229" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="32.33846153846152" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="32.33846153846152" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="32.86153846153846" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.07692307692305" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.107692307692275" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.19999999999999" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.23076923076922" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.23076923076922" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.38461538461536" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.538461538461526" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.56923076923076" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.56923076923076" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.59999999999998" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.59999999999998" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.692307692307665" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.78461538461538" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.87692307692306" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.87692307692306" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.87692307692306" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="33.99999999999997" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.061538461538426" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.2153846153846" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.30769230769228" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.30769230769228" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.36923076923073" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.4" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.43076923076923" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.461538461538446" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.70769230769227" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.70769230769227" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.830769230769214" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.830769230769214" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.86153846153844" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="34.95384615384612" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="35.29230769230766" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="35.29230769230766" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="35.32307692307688" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="35.32307692307688" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="35.38461538461537" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="45.99999999999998" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="46.12307692307689" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="46.12307692307689" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="46.79999999999996" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="47.23076923076921" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="47.59999999999997" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="48.030769230769195" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="48.061538461538454" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="48.30769230769227" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="48.430769230769215" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="48.64615384615381" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="49.10769230769228" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="49.169230769230744" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="49.415384615384596" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="49.599999999999994" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="49.630769230769225" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="49.66153846153845" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="49.7230769230769" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="50.15384615384612" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="50.953846153846136" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="51.26153846153845" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="51.415384615384575" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="51.93846153846151" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="52.584615384615354" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="56.95384615384612" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="68.67692307692307" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="79.29230769230769" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="79.50769230769228" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="86.09230769230768" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="94.55384615384611" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="95.59999999999998" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="134.64615384615382" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="180.49230769230766" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="205" font-size="20" fill="white" dominant-baseline="middle" >triangle</text>
+<line x1="10" y1="169.5" x2="930" y2="169.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 180)">
+<line x1="62" y1="10" x2="62" y2="40" stroke="white" stroke-width="2" />
+<line x1="86" y1="10" x2="86" y2="40" stroke="white" stroke-width="2" />
+<rect x="71" y="0" width="2" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="73" y="0" width="4" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="62" y1="25" x2="71" y2="25" stroke="white" stroke-width="2" />
+<line x1="77" y1="25" x2="86" y2="25" stroke="white" stroke-width="2" />
+<circle cx="60.21538461538461" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="61.4153846153846" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="61.53846153846151" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="61.66153846153842" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="61.66153846153842" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="61.692307692307644" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="87.69230769230765" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="88.4615384615384" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="88.76923076923075" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="89.6615384615384" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="89.93846153846152" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="91.01538461538462" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="91.47692307692303" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="91.59999999999994" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="92.12307692307688" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="95.07692307692304" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="96.52307692307687" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="97.44615384615382" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="98.15384615384612" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="98.79999999999997" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="110.79999999999994" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="113.16923076923071" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="113.50769230769228" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="115.81538461538454" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="115.99999999999997" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="118.73846153846148" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="123.66153846153843" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="126.70769230769226" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="130.12307692307692" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="133.0461538461538" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="135.69230769230768" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="136.95384615384614" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="138.15384615384613" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="139.7538461538461" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="140.27692307692303" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="147.2307692307692" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="151.5384615384615" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="152.5230769230769" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="153.63076923076915" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="157.7538461538461" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="163.66153846153844" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="168.79999999999995" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="180.70769230769227" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="187.35384615384612" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="229.9384615384614" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="272.676923076923" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="315.4461538461538" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="648.1538461538458" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="275" font-size="20" fill="white" dominant-baseline="middle" >poly2tri</text>
+<line x1="10" y1="239.5" x2="930" y2="239.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 250)">
+<line x1="208" y1="10" x2="208" y2="40" stroke="white" stroke-width="2" />
+<line x1="245" y1="10" x2="245" y2="40" stroke="white" stroke-width="2" />
+<rect x="222" y="0" width="4" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="226" y="0" width="5" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="208" y1="25" x2="222" y2="25" stroke="white" stroke-width="2" />
+<line x1="231" y1="25" x2="245" y2="25" stroke="white" stroke-width="2" />
+<circle cx="206.98461538461527" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="207.07692307692307" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="207.26153846153844" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="247.5384615384615" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="249.44615384615378" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="249.5999999999999" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="250.12307692307684" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="250.36923076923068" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="250.49230769230766" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="250.76923076923072" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="252.55384615384608" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="255.66153846153838" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="256.0307692307692" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="256.4615384615384" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="256.49230769230763" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="259.1076923076922" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="259.75384615384615" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="260.12307692307684" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="261.59999999999985" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="263.4461538461538" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="265.96923076923076" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="266.7692307692307" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="269.0461538461538" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="269.72307692307686" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="269.87692307692305" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="269.99999999999994" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="270.1538461538461" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="271.9692307692307" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="275.5999999999999" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="275.63076923076915" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="275.6615384615384" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="275.9384615384615" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="277.19999999999993" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="278.64615384615377" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="279.07692307692304" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<text x="20" y="345" font-size="20" fill="white" dominant-baseline="middle" >cdt</text>
+<line x1="10" y1="309.5" x2="930" y2="309.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 320)">
+<line x1="498" y1="10" x2="498" y2="40" stroke="white" stroke-width="2" />
+<line x1="542" y1="10" x2="542" y2="40" stroke="white" stroke-width="2" />
+<rect x="515" y="0" width="6" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="521" y="0" width="5" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="498" y1="25" x2="515" y2="25" stroke="white" stroke-width="2" />
+<line x1="526" y1="25" x2="542" y2="25" stroke="white" stroke-width="2" />
+<circle cx="496.92307692307685" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="496.9846153846153" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="497.13846153846146" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="497.19999999999993" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="497.87692307692294" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="498.27692307692297" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="542.8307692307692" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="542.8923076923076" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="543.7230769230767" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="544.2153846153846" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="544.6153846153844" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="545.8461538461537" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="548.5230769230768" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="548.8" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="550.0923076923076" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="550.9230769230768" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="550.9230769230768" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="551.4153846153844" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="553.6307692307691" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="556.1538461538461" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="557.9692307692306" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="579.076923076923" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="592.2769230769229" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="620.8615384615384" cy="25" r="2.5" fill="#ff000060" />
+<circle cx="740.430769230769" cy="25" r="2.5" fill="#ff000060" />
+</g>
+<rect x="130" y="100" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 35)">
+<rect x="0" y="0" width="360" height="185" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min (including outliers):</text>
+<text x="240" y="25" fill="white" >0.90ms</text>
+<text x="10" y="50" fill="white" >Min:</text>
+<text x="240" y="50" fill="white" >0.92ms</text>
+<text x="10" y="75" fill="white" >Q1:</text>
+<text x="240" y="75" fill="white" >0.93ms</text>
+<text x="10" y="100" fill="white" >Median:</text>
+<text x="240" y="100" fill="white" >0.93ms</text>
+<text x="10" y="125" fill="white" >Q3:</text>
+<text x="240" y="125" fill="white" >0.94ms</text>
+<text x="10" y="150" fill="white" >Max:</text>
+<text x="240" y="150" fill="white" >0.95ms</text>
+<text x="10" y="175" fill="white" >Max (including outliers):</text>
+<text x="240" y="175" fill="white" >1.39ms</text>
+</g>
+<rect x="130" y="170" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 105)">
+<rect x="0" y="0" width="360" height="185" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min (including outliers):</text>
+<text x="240" y="25" fill="white" >1.00ms</text>
+<text x="10" y="50" fill="white" >Min:</text>
+<text x="240" y="50" fill="white" >1.00ms</text>
+<text x="10" y="75" fill="white" >Q1:</text>
+<text x="240" y="75" fill="white" >1.03ms</text>
+<text x="10" y="100" fill="white" >Median:</text>
+<text x="240" y="100" fill="white" >1.04ms</text>
+<text x="10" y="125" fill="white" >Q3:</text>
+<text x="240" y="125" fill="white" >1.05ms</text>
+<text x="10" y="150" fill="white" >Max:</text>
+<text x="240" y="150" fill="white" >1.08ms</text>
+<text x="10" y="175" fill="white" >Max (including outliers):</text>
+<text x="240" y="175" fill="white" >2.91ms</text>
+</g>
+<rect x="130" y="240" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 175)">
+<rect x="0" y="0" width="360" height="185" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min (including outliers):</text>
+<text x="240" y="25" fill="white" >1.47ms</text>
+<text x="10" y="50" fill="white" >Min:</text>
+<text x="240" y="50" fill="white" >1.47ms</text>
+<text x="10" y="75" fill="white" >Q1:</text>
+<text x="240" y="75" fill="white" >1.52ms</text>
+<text x="10" y="100" fill="white" >Median:</text>
+<text x="240" y="100" fill="white" >1.54ms</text>
+<text x="10" y="125" fill="white" >Q3:</text>
+<text x="240" y="125" fill="white" >1.55ms</text>
+<text x="10" y="150" fill="white" >Max:</text>
+<text x="240" y="150" fill="white" >1.60ms</text>
+<text x="10" y="175" fill="white" >Max (including outliers):</text>
+<text x="240" y="175" fill="white" >1.71ms</text>
+</g>
+<rect x="130" y="310" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 245)">
+<rect x="0" y="0" width="360" height="185" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min (including outliers):</text>
+<text x="240" y="25" fill="white" >2.42ms</text>
+<text x="10" y="50" fill="white" >Min:</text>
+<text x="240" y="50" fill="white" >2.42ms</text>
+<text x="10" y="75" fill="white" >Q1:</text>
+<text x="240" y="75" fill="white" >2.47ms</text>
+<text x="10" y="100" fill="white" >Median:</text>
+<text x="240" y="100" fill="white" >2.49ms</text>
+<text x="10" y="125" fill="white" >Q3:</text>
+<text x="240" y="125" fill="white" >2.51ms</text>
+<text x="10" y="150" fill="white" >Max:</text>
+<text x="240" y="150" fill="white" >2.56ms</text>
+<text x="10" y="175" fill="white" >Max (including outliers):</text>
+<text x="240" y="175" fill="white" >3.21ms</text>
+</g>
+</svg>

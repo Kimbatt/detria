@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "triangulator_benchmark.h"
+#include "boxplot.h"
 
 #include <fileformat.hpp>
 
@@ -82,61 +83,83 @@ void TriangulatorBenchmark::runBenchmark(std::string name, const TriangulationIn
         exportObj<Vec2, Idx, Triangle>(input.points, resultTriangles, exportFolder / resultFileName);
     }
 
+    // Generate box plot image
+    BoxPlotInput boxPlotInput{ };
+    {
+        std::filesystem::path imagesFolder = "images";
+        imagesFolder /= "benchmark";
+
+        std::vector<BoxPlotDatasetValues> boxPlotValues;
+        boxPlotValues.reserve(_triangulators.size());
+
+        std::vector<double> sampleTimes;
+        for (const auto& runResult : run.results)
+        {
+            sampleTimes.clear();
+            sampleTimes.reserve(runResult.times.size());
+
+            for (const auto& time : runResult.times)
+            {
+                double timeInMilliseconds = std::chrono::duration<double, std::milli>(time).count();
+                sampleTimes.push_back(timeInMilliseconds);
+            }
+
+            std::sort(sampleTimes.begin(), sampleTimes.end());
+            boxPlotValues.emplace_back(calculateDatasetValues(runResult.triangulatorName, sampleTimes));
+        }
+
+        std::stringstream ss;
+        ss << run.vertexCount << " vertices, " << run.triangleCount << " triangles"
+            << " (measured " << runCount << " times)";
+
+        boxPlotInput = BoxPlotInput
+        {
+            .name = run.name,
+            .description = ss.str(),
+            .valueAxisName = "Triangulation time (milliseconds)",
+            .values = std::move(boxPlotValues),
+            .valueDecimals = 2,
+            .valueUnit = "ms",
+            .rowNameWidth = 120
+        };
+
+        std::string svg = generateBoxPlotSvg(boxPlotInput);
+
+        std::string svgFileName = name;
+        svgFileName.append(".svg");
+        std::ofstream svgFile(imagesFolder / svgFileName);
+        svgFile << svg;
+    }
+
     // Print results
     {
         constexpr size_t triangulatorNameColumn = 0;
-        constexpr size_t averageTimeColumn = 1;
+        constexpr size_t minTimeColumn = 1;
         constexpr size_t medianTimeColumn = 2;
-        constexpr size_t shortestTimeColumn = 3;
-        constexpr size_t totalTimeColumn = 4;
-        constexpr size_t numColumns = 5;
+        constexpr size_t maxTimeColumn = 3;
+        constexpr size_t numColumns = 4;
         std::vector<std::vector<std::string>> columns(numColumns);
 
         columns[triangulatorNameColumn].emplace_back("triangulator");
-        columns[averageTimeColumn].emplace_back("average time");
+        columns[minTimeColumn].emplace_back("shortest time");
         columns[medianTimeColumn].emplace_back("median time");
-        columns[shortestTimeColumn].emplace_back("shortest time");
-        columns[totalTimeColumn].emplace_back("total time");
+        columns[maxTimeColumn].emplace_back("longest time");
 
-        for (auto& result : run.results)
+        for (auto& values : boxPlotInput.values)
         {
-            columns[triangulatorNameColumn].emplace_back(result.triangulatorName);
+            columns[triangulatorNameColumn].emplace_back(values.name);
 
-            if (!result.supported)
+            if (!values.supported)
             {
-                columns[averageTimeColumn].emplace_back("*not supported*");
+                columns[minTimeColumn].emplace_back("*not supported*");
                 columns[medianTimeColumn].emplace_back();
-                columns[shortestTimeColumn].emplace_back();
-                columns[totalTimeColumn].emplace_back();
+                columns[maxTimeColumn].emplace_back();
             }
             else
             {
-                std::sort(result.times.begin(), result.times.end());
-
-                Clock::duration totalTime{ };
-
-                for (const auto& time : result.times)
-                {
-                    totalTime += time;
-                }
-
-                Clock::duration averageTime = totalTime / result.times.size();
-
-                Clock::duration medianTime{ };
-                size_t middleIndex = result.times.size() / 2;
-                if (result.times.size() % 2 == 0)
-                {
-                    medianTime = (result.times[middleIndex - 1] + result.times[middleIndex]) / 2;
-                }
-                else
-                {
-                    medianTime = result.times[middleIndex];
-                }
-
-                columns[averageTimeColumn].emplace_back(DurationToString(averageTime));
-                columns[medianTimeColumn].emplace_back(DurationToString(medianTime));
-                columns[shortestTimeColumn].emplace_back(DurationToString(result.times[0]));
-                columns[totalTimeColumn].emplace_back(DurationToString(totalTime));
+                columns[minTimeColumn].emplace_back(ToStringWithPrecision(values.minValue, 2));
+                columns[medianTimeColumn].emplace_back(ToStringWithPrecision(values.median, 2));
+                columns[maxTimeColumn].emplace_back(ToStringWithPrecision(values.maxValue, 2));
             }
         }
 

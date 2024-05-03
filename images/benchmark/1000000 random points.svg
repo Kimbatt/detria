@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="970" height="460">
+
+<style>
+text, .has-tooltip + *
+{
+    pointer-events: none;
+}
+
+.has-tooltip:not(:hover) + *
+{
+    display: none;
+}
+</style>
+
+<rect x="0" y="0" width="970" height="460" fill="#121212" />
+<text x="10" y="40" font-size="30" fill="white" >1000000 random points</text>
+<text x="10" y="80" font-size="20" fill="white" >1000004 vertices, 2000002 triangles (measured 3 times)</text>
+<line x1="130.5" y1="100" x2="130.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="930.5" y1="100" x2="930.5" y2="380" stroke="white" stroke-width="1" />
+<line x1="10" y1="379.5" x2="930" y2="379.5" stroke="white" stroke-width="1" />
+<line x1="130.5" y1="380" x2="130.5" y2="390" stroke="white" stroke-width="1" />
+<text x="130.5" y="400" font-size="10" fill="white" text-anchor="middle" >900ms</text>
+<line x1="170.5" y1="380" x2="170.5" y2="390" stroke="white" stroke-width="1" />
+<text x="170.5" y="400" font-size="10" fill="white" text-anchor="middle" >1000ms</text>
+<line x1="210.5" y1="380" x2="210.5" y2="390" stroke="white" stroke-width="1" />
+<text x="210.5" y="400" font-size="10" fill="white" text-anchor="middle" >1100ms</text>
+<line x1="250.5" y1="380" x2="250.5" y2="390" stroke="white" stroke-width="1" />
+<text x="250.5" y="400" font-size="10" fill="white" text-anchor="middle" >1200ms</text>
+<line x1="290.5" y1="380" x2="290.5" y2="390" stroke="white" stroke-width="1" />
+<text x="290.5" y="400" font-size="10" fill="white" text-anchor="middle" >1300ms</text>
+<line x1="330.5" y1="380" x2="330.5" y2="390" stroke="white" stroke-width="1" />
+<text x="330.5" y="400" font-size="10" fill="white" text-anchor="middle" >1400ms</text>
+<line x1="370.5" y1="380" x2="370.5" y2="390" stroke="white" stroke-width="1" />
+<text x="370.5" y="400" font-size="10" fill="white" text-anchor="middle" >1500ms</text>
+<line x1="410.5" y1="380" x2="410.5" y2="390" stroke="white" stroke-width="1" />
+<text x="410.5" y="400" font-size="10" fill="white" text-anchor="middle" >1600ms</text>
+<line x1="450.5" y1="380" x2="450.5" y2="390" stroke="white" stroke-width="1" />
+<text x="450.5" y="400" font-size="10" fill="white" text-anchor="middle" >1700ms</text>
+<line x1="490.5" y1="380" x2="490.5" y2="390" stroke="white" stroke-width="1" />
+<text x="490.5" y="400" font-size="10" fill="white" text-anchor="middle" >1800ms</text>
+<line x1="530.5" y1="380" x2="530.5" y2="390" stroke="white" stroke-width="1" />
+<text x="530.5" y="400" font-size="10" fill="white" text-anchor="middle" >1900ms</text>
+<line x1="570.5" y1="380" x2="570.5" y2="390" stroke="white" stroke-width="1" />
+<text x="570.5" y="400" font-size="10" fill="white" text-anchor="middle" >2000ms</text>
+<line x1="610.5" y1="380" x2="610.5" y2="390" stroke="white" stroke-width="1" />
+<text x="610.5" y="400" font-size="10" fill="white" text-anchor="middle" >2100ms</text>
+<line x1="650.5" y1="380" x2="650.5" y2="390" stroke="white" stroke-width="1" />
+<text x="650.5" y="400" font-size="10" fill="white" text-anchor="middle" >2200ms</text>
+<line x1="690.5" y1="380" x2="690.5" y2="390" stroke="white" stroke-width="1" />
+<text x="690.5" y="400" font-size="10" fill="white" text-anchor="middle" >2300ms</text>
+<line x1="730.5" y1="380" x2="730.5" y2="390" stroke="white" stroke-width="1" />
+<text x="730.5" y="400" font-size="10" fill="white" text-anchor="middle" >2400ms</text>
+<line x1="770.5" y1="380" x2="770.5" y2="390" stroke="white" stroke-width="1" />
+<text x="770.5" y="400" font-size="10" fill="white" text-anchor="middle" >2500ms</text>
+<line x1="810.5" y1="380" x2="810.5" y2="390" stroke="white" stroke-width="1" />
+<text x="810.5" y="400" font-size="10" fill="white" text-anchor="middle" >2600ms</text>
+<line x1="850.5" y1="380" x2="850.5" y2="390" stroke="white" stroke-width="1" />
+<text x="850.5" y="400" font-size="10" fill="white" text-anchor="middle" >2700ms</text>
+<line x1="890.5" y1="380" x2="890.5" y2="390" stroke="white" stroke-width="1" />
+<text x="890.5" y="400" font-size="10" fill="white" text-anchor="middle" >2800ms</text>
+<line x1="930.5" y1="380" x2="930.5" y2="390" stroke="white" stroke-width="1" />
+<text x="930.5" y="400" font-size="10" fill="white" text-anchor="middle" >2900ms</text>
+<text x="530" y="435" font-size="16" fill="white" text-anchor="middle" >Triangulation time (milliseconds)</text>
+<text x="20" y="135" font-size="20" fill="white" dominant-baseline="middle" >detria</text>
+<line x1="10" y1="99.5" x2="930" y2="99.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 110)">
+<line x1="336" y1="10" x2="336" y2="40" stroke="white" stroke-width="2" />
+<line x1="395" y1="10" x2="395" y2="40" stroke="white" stroke-width="2" />
+<rect x="336" y="0" width="23" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="359" y="0" width="36" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="336" y1="25" x2="336" y2="25" stroke="white" stroke-width="2" />
+<line x1="395" y1="25" x2="395" y2="25" stroke="white" stroke-width="2" />
+</g>
+<text x="20" y="205" font-size="20" fill="white" dominant-baseline="middle" >triangle</text>
+<line x1="10" y1="169.5" x2="930" y2="169.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 180)">
+<line x1="17" y1="10" x2="17" y2="40" stroke="white" stroke-width="2" />
+<line x1="30" y1="10" x2="30" y2="40" stroke="white" stroke-width="2" />
+<rect x="17" y="0" width="2" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="19" y="0" width="11" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="17" y1="25" x2="17" y2="25" stroke="white" stroke-width="2" />
+<line x1="30" y1="25" x2="30" y2="25" stroke="white" stroke-width="2" />
+</g>
+<text x="20" y="275" font-size="20" fill="white" dominant-baseline="middle" >poly2tri</text>
+<line x1="10" y1="239.5" x2="930" y2="239.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 250)">
+<line x1="606" y1="10" x2="606" y2="40" stroke="white" stroke-width="2" />
+<line x1="618" y1="10" x2="618" y2="40" stroke="white" stroke-width="2" />
+<rect x="606" y="0" width="7" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="613" y="0" width="5" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="606" y1="25" x2="606" y2="25" stroke="white" stroke-width="2" />
+<line x1="618" y1="25" x2="618" y2="25" stroke="white" stroke-width="2" />
+</g>
+<text x="20" y="345" font-size="20" fill="white" dominant-baseline="middle" >cdt</text>
+<line x1="10" y1="309.5" x2="930" y2="309.5" stroke="white" stroke-width="1" />
+<g transform="translate(130, 320)">
+<line x1="731" y1="10" x2="731" y2="40" stroke="white" stroke-width="2" />
+<line x1="746" y1="10" x2="746" y2="40" stroke="white" stroke-width="2" />
+<rect x="731" y="0" width="6" height="50" fill="#404040" stroke="white" stroke-width="2" />
+<rect x="737" y="0" width="9" height="50" fill="#505050" stroke="white" stroke-width="2" />
+<line x1="731" y1="25" x2="731" y2="25" stroke="white" stroke-width="2" />
+<line x1="746" y1="25" x2="746" y2="25" stroke="white" stroke-width="2" />
+</g>
+<rect x="130" y="100" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 35)">
+<rect x="0" y="0" width="360" height="135" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >1740.52ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >1740.52ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >1797.81ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >1888.68ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >1888.68ms</text>
+</g>
+<rect x="130" y="170" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 105)">
+<rect x="0" y="0" width="360" height="135" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >942.43ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >942.43ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >946.44ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >975.00ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >975.00ms</text>
+</g>
+<rect x="130" y="240" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 175)">
+<rect x="0" y="0" width="360" height="135" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >2415.54ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >2415.54ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >2433.27ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >2444.83ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >2444.83ms</text>
+</g>
+<rect x="130" y="310" width="800" height="70" class="has-tooltip" opacity="0" />
+<g transform="translate(150, 245)">
+<rect x="0" y="0" width="360" height="135" fill="black" stroke="#a0a0a0" stroke-width="2" rx="5" />
+<text x="10" y="25" fill="white" >Min:</text>
+<text x="240" y="25" fill="white" >2728.35ms</text>
+<text x="10" y="50" fill="white" >Q1:</text>
+<text x="240" y="50" fill="white" >2728.35ms</text>
+<text x="10" y="75" fill="white" >Median:</text>
+<text x="240" y="75" fill="white" >2741.71ms</text>
+<text x="10" y="100" fill="white" >Q3:</text>
+<text x="240" y="100" fill="white" >2763.90ms</text>
+<text x="10" y="125" fill="white" >Max:</text>
+<text x="240" y="125" fill="white" >2763.90ms</text>
+</g>
+</svg>
