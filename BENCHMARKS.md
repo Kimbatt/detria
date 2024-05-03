@@ -19,8 +19,8 @@ The benchmark data includes:
 - Fractal test: see [here](images/fractal.png), contains a lot of cocircular points
 - Random test: generating uniform random points inside a square - the square has 4 corners and 4 outline edges, the rest of the points are steiner points
 
-The result images include the times required to perform the triangulations, in a box plot format. Red dots are outliers.  
-Hover the rows in the images for additional info.
+The result images include the times required to perform the triangulations, in a box plot format. Red dots are outliers (that are outside the 1.5 IQR range).  
+For additional info, open the images in a new tab, and hover the rows.
 
 ## Results
 
