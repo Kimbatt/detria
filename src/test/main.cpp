@@ -16,7 +16,7 @@
 using namespace util;
 
 template <typename Point, typename Idx>
-bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::path& exportFolder,
+bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::path& exportFolder, bool expectedToFail,
     const std::vector<Point>& points, const std::vector<Polyline<Idx>>& polylines, const std::vector<std::pair<Idx, Idx>>& manuallyConstrainedEdges)
 {
     std::filesystem::path fileName = filePath.filename();
@@ -47,13 +47,28 @@ bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::p
     }
 
     Clock::time_point start = Clock::now();
-    bool success = tri.triangulate(true);
+    bool triangulationSuccess = tri.triangulate(true);
     Clock::time_point end = Clock::now();
+
+    bool success = true;
+    if (triangulationSuccess == expectedToFail)
+    {
+        if (expectedToFail)
+        {
+            std::cout << "Triangulation succeeded, but it was expected to fail" << std::endl;
+        }
+        else
+        {
+            std::cout << "Triangulation failed, but it was expected to succeed" << std::endl;
+        }
+
+        success = false;
+    }
 
     constexpr bool integerCoordinates = std::is_integral_v<decltype(Point::x)>;
     constexpr const char* maybeIntegerCoordinatesText = integerCoordinates ? " (integer coordinates)" : "";
 
-    if (success)
+    if (triangulationSuccess)
     {
         // Test export
 
@@ -62,21 +77,98 @@ bool Triangulate(const std::filesystem::path& filePath, const std::filesystem::p
         detria::TriangleLocationMask exportLocation = polylines.empty() ? detria::TriangleLocationMask::All : detria::TriangleLocationMask::Interior;
 
         std::vector<detria::Triangle<Idx>> triangles;
-        bool correctTriangleOrientation = true;
+
         tri.forEachTriangleOfLocation([&](const detria::Triangle<Idx>& triangle, const detria::TriangleLocation& /* location */)
+        {
+            triangles.push_back(triangle);
+        }, exportLocation, false);
+
+        // Check triangle orientations - all triangles must be in a CCW orientation
+        bool correctTriangleOrientation = true;
+        tri.forEachTriangleOfEveryLocation([&](const detria::Triangle<Idx>& triangle)
         {
             if (detria::math::orient2d<true>(points[triangle.x], points[triangle.y], points[triangle.z]) != detria::math::Orientation::CCW)
             {
                 correctTriangleOrientation = false;
             }
-
-            triangles.push_back(triangle);
-        }, exportLocation, false);
+        }, false);
 
         if (!correctTriangleOrientation)
         {
             success = false;
-            std::cout << "Triangulation has flipped triangles: " << fileName << std::endl;
+            std::cout << "Error - triangulation has flipped triangles: " << fileName << std::endl;
+        }
+        else
+        {
+            // Check delaunay condition
+            const auto& topology = tri.getTopology();
+            using Topology = std::decay_t<decltype(topology)>;
+            using TVertex = typename Topology::VertexIndex;
+            using TEdge = typename Topology::HalfEdgeIndex;
+
+            size_t vertexCount = topology.vertexCount();
+            for (size_t i = 0; i < vertexCount; ++i)
+            {
+                topology.forEachEdgeOfVertex(TVertex(Idx(i)), [&](TEdge edgeIndex)
+                {
+                    TEdge e0 = edgeIndex;
+                    TEdge e1 = topology.getEdge(topology.getOpposite(e0)).prevEdge;
+                    TEdge e2 = topology.getEdge(topology.getOpposite(e1)).prevEdge;
+
+                    if (topology.getEdgeData(e0).isBoundary())
+                    {
+                        return true;
+                    }
+                    if (topology.getEdgeData(e1).isBoundary())
+                    {
+                        return true;
+                    }
+                    if (topology.getEdgeData(e2).isBoundary())
+                    {
+                        return true;
+                    }
+
+                    TVertex v0 = topology.getEdge(e0).vertex;
+                    TVertex v1 = topology.getEdge(e1).vertex;
+                    TVertex v2 = topology.getEdge(e2).vertex;
+
+                    Point p0 = points[size_t(v0.index)];
+                    Point p1 = points[size_t(v1.index)];
+                    Point p2 = points[size_t(v2.index)];
+
+                    auto checkOppositeVertex = [&](TEdge e)
+                    {
+                        TEdge opposite = topology.getOpposite(e);
+                        const auto& oppositeData = topology.getEdgeData(opposite);
+                        if (oppositeData.isBoundary() || oppositeData.isConstrained())
+                        {
+                            return;
+                        }
+
+                        TVertex v3 = topology.getEdge(topology.getOpposite(topology.getEdge(e).prevEdge)).vertex;
+                        Point p3 = points[size_t(v3.index)];
+
+                        if (detria::math::incircle<true, Point>(p2, p1, p0, p3) == detria::math::CircleLocation::Inside)
+                        {
+                            success = false;
+                            std::cout << "Error - non-delaunay triangle found: circumcircle of triangle { "
+                                << v2.index << ", " << v1.index << ", " << v0.index
+                                << " } contains point " << v3.index << std::endl;
+                        }
+                    };
+
+                    checkOppositeVertex(e0);
+                    checkOppositeVertex(e1);
+                    checkOppositeVertex(e2);
+
+                    return success;
+                });
+
+                if (!success)
+                {
+                    break;
+                }
+            }
         }
 
         if (!integerCoordinates)
@@ -351,17 +443,18 @@ int main()
         const std::vector<std::filesystem::path>& filesThatCanBeUsedWithIntegerCoordinates,
         const std::vector<Point>& allPoints, const std::vector<Polyline<Idx>>& allPolylines, const std::vector<std::pair<Idx, Idx>>& allManuallyConstrainedEdges)
     {
-        bool success = Triangulate(filePath, testExportFolder / folder, allPoints, allPolylines, allManuallyConstrainedEdges);
         bool shouldFail = contains(filesExpectedToFail, filePath);
+        bool success = Triangulate(filePath, testExportFolder / folder, shouldFail, allPoints, allPolylines, allManuallyConstrainedEdges);
 
         bool checkIntegerCoordinates = contains(filesThatCanBeUsedWithIntegerCoordinates, filePath);
         bool successWithIntegerCoordinates = true;
         if (checkIntegerCoordinates)
         {
-            successWithIntegerCoordinates = Triangulate(filePath, testExportFolder / folder, getIntegerPoints<Point, detria::Vec2<int>>(allPoints), allPolylines, { });
+            successWithIntegerCoordinates = Triangulate(filePath, testExportFolder / folder, shouldFail,
+                getIntegerPoints<Point, detria::Vec2<int>>(allPoints), allPolylines, { });
         }
 
-        if (success == shouldFail || (checkIntegerCoordinates && (successWithIntegerCoordinates == shouldFail)))
+        if (!success || !successWithIntegerCoordinates)
         {
             failTest(filePath.string());
         }

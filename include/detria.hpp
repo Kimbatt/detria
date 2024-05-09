@@ -50,7 +50,6 @@ if (success)
 #include <array>
 #include <cmath>
 #include <cstdint>
-#include <limits>
 #include <type_traits>
 #include <optional>
 #include <variant>
@@ -59,6 +58,7 @@ if (success)
 
 #if !defined(NDEBUG)
 #include <iostream>
+#include <limits>
 
 #if !defined(_WIN32) || !_WIN32
 #include <csignal>
@@ -1202,7 +1202,7 @@ namespace detria
         inline CircleLocation incircle(const Vec2& a, const Vec2& b, const Vec2& c, const Vec2& d)
         {
 #ifndef NDEBUG
-            // The points pa, pb, and pc must be in counterclockwise order, or the sign of the result will be reversed.
+            // The points pa, pb, and pc must be in counterclockwise order, or the sign of the result will be reversed
             detail::detriaAssert(math::orient2d<Robust, Vec2>(a, b, c) == math::Orientation::CCW);
 #endif
 
@@ -2986,6 +2986,12 @@ namespace detria
             return { };
         }
 
+        // Returns the half-edge data structure created during the triangulation (mostly used for testing)
+        const Topology& getTopology() const
+        {
+            return _topology;
+        }
+
         // Generates a text representation of the triangulation input, which can be used for debugging, or for reporting an issue
         std::string generateDebugFile() const
         {
@@ -4098,7 +4104,7 @@ namespace detria
                     {
                         // Add edge if needed
 
-                        std::optional<THalfEdge> oppositeEdge{ };
+                        THalfEdge oppositeEdge{ };
                         if (isCW)
                         {
                             if (!_topology.getEdgeBetween(prevPrevVertex, currentVertex).isValid())
@@ -4106,7 +4112,7 @@ namespace detria
                                 oppositeEdge = _topology.getEdgeBetween(prevPrevVertex, prevVertex);
 
                                 _topology.createNewEdge(prevPrevVertex, currentVertex,
-                                    _topology.getEdge(*oppositeEdge).prevEdge,
+                                    _topology.getEdge(oppositeEdge).prevEdge,
                                     _topology.getEdgeBetween(currentVertex, prevVertex),
                                     getReusedEdge()
                                 );
@@ -4120,7 +4126,7 @@ namespace detria
 
                                 _topology.createNewEdge(currentVertex, prevPrevVertex,
                                     _topology.getEdge(_topology.getEdgeBetween(currentVertex, prevVertex)).prevEdge,
-                                    *oppositeEdge,
+                                    oppositeEdge,
                                     getReusedEdge()
                                 );
                             }
@@ -4129,12 +4135,23 @@ namespace detria
                         // Update stack
                         _constrainedEdgeReTriangulationStack.pop_back();
 
-                        if (delaunay && oppositeEdge.has_value())
+                        if (delaunay)
                         {
-                            // Ensure delaunay criteria for the newly inserted triangle
-                            // Usually, the triangles are already delaunay, but sometimes not, so check it here
+                            if (i == vertices.size() - 1 && !oppositeEdge.isValid())
+                            {
+                                // For the last vertex, the edge might already be created, so oppositeEdge is not always set
+                                // But it is needed for delaunay edge flip, so make sure it is set properly
+                                oppositeEdge = _topology.getEdgeBetween(prevPrevVertex, prevVertex);
+                                DETRIA_DEBUG_ASSERT(oppositeEdge.isValid());
+                            }
 
-                            DETRIA_CHECK(delaunayEdgeFlip(currentVertex, *oppositeEdge));
+                            if (oppositeEdge.isValid())
+                            {
+                                // Ensure delaunay criteria for the newly inserted triangle
+                                // Usually, the triangles are already delaunay, but sometimes not, so check it here
+
+                                DETRIA_CHECK(delaunayEdgeFlip(currentVertex, oppositeEdge));
+                            }
                         }
 
                         // If there are more than one items left in the stack, then go back and try to triangulate again

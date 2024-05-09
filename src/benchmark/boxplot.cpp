@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cmath>
-#include <format>
 #include <numeric>
 #include <optional>
 #include <sstream>
@@ -113,7 +112,7 @@ std::string generateBoxPlotSvg(const BoxPlotInput& input)
     int finalNumSteps = int(std::round((globalMax - globalMin) / finalStepSize));
 
     std::stringstream ss;
-    ss << std::format(R""(<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}">)"", totalWidth, totalHeight) << std::endl;
+    ss << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << totalWidth << "\" height=\"" << totalHeight << "\">" << std::endl;
 
     // Setup non-value related stuff
 
@@ -304,7 +303,7 @@ text, .has-tooltip + *
             1
         );
 
-        ss << std::format(R""(<g transform="translate({}, {})">)"", boxPlotMinX, rowY) << std::endl;
+        ss << "<g transform=\"translate(" << boxPlotMinX << ", " << rowY << ")\">" << std::endl;
 
         if (values.supported)
         {
@@ -375,11 +374,9 @@ text, .has-tooltip + *
             // Outliers
             for (double outlier : values.outliers)
             {
-                ss << std::format(R""(<circle cx="{}" cy="{}" r="{}" fill="#ff000060" />)"",
-                    mapValueToDoubleSvgX(outlier),
-                    halfRowHeight,
-                    2.5
-                ) << std::endl;
+                ss << "<circle cx=\"" << mapValueToDoubleSvgX(outlier)
+                    << "\" cy=\"" << halfRowHeight
+                    << "\" r=\"2.5\" fill=\"#ff000060\" />" << std::endl;
             }
         }
         else
@@ -417,7 +414,7 @@ text, .has-tooltip + *
                 rowHeight + rowSpacing
             );
 
-            ss << std::format(R""(<g transform="translate({}, {})">)"", boxPlotMinX + 20, rowY - 75) << std::endl;
+            ss << "<g transform=\"translate(" << boxPlotMinX + 20 << ", " << rowY - 75 << ")\">" << std::endl;
 
             constexpr int rowSpacing = 25;
             std::vector<std::pair<std::string, double>> valueRows;

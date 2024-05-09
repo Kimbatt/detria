@@ -1,6 +1,3 @@
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 if (EMSCRIPTEN)
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s ALLOW_MEMORY_GROWTH -s TOTAL_MEMORY=128MB")
@@ -41,6 +38,8 @@ target_include_directories(detria-benchmark PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/
 target_include_directories(detria-benchmark PRIVATE ${CMAKE_SOURCE_DIR})
 target_include_directories(detria-benchmark PRIVATE ${CMAKE_SOURCE_DIR}/include)
 set_target_properties(detria-benchmark PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+set_target_properties(detria-benchmark PROPERTIES CXX_STANDARD 20)
+set_target_properties(detria-benchmark PROPERTIES CXX_STANDARD_REQUIRED ON)
 
 # Include fetched libraries
 target_include_directories(detria-benchmark PRIVATE ${nanobench_SOURCE_DIR}/src/include)
