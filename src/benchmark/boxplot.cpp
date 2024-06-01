@@ -12,7 +12,7 @@ BoxPlotDatasetValues calculateDatasetValues(const std::string& name, std::span<c
     BoxPlotDatasetValues result
     {
         .name = name,
-        .supported = sortedSamples.size() >= 3
+        .supported = !sortedSamples.empty()
     };
 
     if (!result.supported)
@@ -27,7 +27,7 @@ BoxPlotDatasetValues calculateDatasetValues(const std::string& name, std::span<c
     auto getMedianAtIndex = [&](size_t index)
     {
         return hasEvenNumberOfSamples
-            ? (sortedSamples[index - 1] + sortedSamples[index]) / 2.0
+            ? (sortedSamples[index == 0 ? 0 : index - 1] + sortedSamples[index]) / 2.0
             : sortedSamples[index];
     };
 

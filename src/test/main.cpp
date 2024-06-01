@@ -542,13 +542,35 @@ int main()
     {
         "constrained edge intersection.txt",
         "duplicate point indices.txt",
+        "long collinear.txt",
         "invalid indices.txt"
     };
     std::vector<std::filesystem::path> detriaFilesThatCanBeUsedWithIntegerCoordinates =
     {
     };
 
-    testFilesFromFolder("natural-earth-countries", { "Canada.txt" }, { });
+    std::vector<std::filesystem::path> naturalEarthFilesExpectedToFail = { "Canada.txt" };
+
+    if constexpr (std::is_same_v<Scalar, float>)
+    {
+        // When using 32-bit floats, there is not enough precision to distinguish some of the points in the following files
+        // The precision loss causes different points to become equal, so expect them to fail in the tests
+
+        naturalEarthFilesExpectedToFail.emplace_back("Antarctica.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("Belize.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("Bosnia and Herzegovina.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("Cuba.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("Cyprus.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("Lebanon.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("North Korea.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("Saint Martin.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("Turkey.txt");
+        naturalEarthFilesExpectedToFail.emplace_back("United States of America.txt");
+
+        detriaFilesExpectedToFail.emplace_back("ne_10m_land.txt");
+    }
+
+    testFilesFromFolder("natural-earth-countries", naturalEarthFilesExpectedToFail, { });
 
     testFilesFromFolder("CDT", cdtFilesExpectedToFail, cdtFilesThatCanBeUsedWithIntegerCoordinates);
     testFilesFromFolder("detria", detriaFilesExpectedToFail, detriaFilesThatCanBeUsedWithIntegerCoordinates);

@@ -74,8 +74,8 @@ namespace util
 
             if (currentDepth < depth)
             {
-                constexpr Scalar sizeFactor = 0.35;
-                constexpr Scalar spacingFactor = 0.425;
+                constexpr Scalar sizeFactor = Scalar(0.35);
+                constexpr Scalar spacingFactor = Scalar(0.425);
 
                 Scalar half = currentSize * spacingFactor;
                 self(self, currentDepth + 1, currentX - half, currentY - half, currentSize * sizeFactor, currentThickness * sizeFactor);
