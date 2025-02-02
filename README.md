@@ -29,7 +29,10 @@ Requires C++17 or later.
 No external dependencies are used, only the C++ standard library.
 
 ## Usage
-Just include [`detria.hpp`](include/detria.hpp) in your project.  
+Just include [`detria.hpp`](include/detria.hpp) in your project.
+
+C++20 modules are also supported: add [`detria.cppm`](include/detria.cppm) and [`detria.hpp`](include/detria.hpp) to your project, then `import detria;`
+
 Basic code example:
 
 ```cpp

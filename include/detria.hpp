@@ -46,6 +46,14 @@ if (success)
 #ifndef DETRIA_HPP_INCLUDED
 #define DETRIA_HPP_INCLUDED
 
+#ifdef DETRIA_CXXMODULE
+
+// Using C++20 modules - headers are included by the module file
+// Also define the export macro
+#define DETRIA_EXPORT export
+
+#else
+
 #include <vector>
 #include <array>
 #include <cmath>
@@ -66,6 +74,11 @@ if (success)
 
 #endif
 
+// Not using C++20 modules - define an empty export macro
+#define DETRIA_EXPORT
+
+#endif
+
 namespace detria
 {
     template <typename T>
@@ -75,10 +88,10 @@ namespace detria
         T y;
     };
 
-    using PointF = Vec2<float>;
-    using PointD = Vec2<double>;
+    DETRIA_EXPORT using PointF = Vec2<float>;
+    DETRIA_EXPORT using PointD = Vec2<double>;
 
-    template <typename Idx>
+    DETRIA_EXPORT template <typename Idx>
     struct Triangle
     {
         Idx x;
@@ -2108,7 +2121,7 @@ namespace detria
         };
     }
 
-    enum class TriangleLocation : uint8_t
+    DETRIA_EXPORT enum class TriangleLocation : uint8_t
     {
         // Inside an outline
         Interior = 0,
@@ -2120,7 +2133,7 @@ namespace detria
         ConvexHull = 2,
     };
 
-    enum class TriangleLocationMask : uint8_t
+    DETRIA_EXPORT enum class TriangleLocationMask : uint8_t
     {
         Interior = 1 << uint8_t(TriangleLocation::Interior),
         Hole = 1 << uint8_t(TriangleLocation::Hole),
@@ -2128,7 +2141,7 @@ namespace detria
         All = Interior | Hole | ConvexHull
     };
 
-    enum class TriangulationError
+    DETRIA_EXPORT enum class TriangulationError
     {
         // Triangulation was successful
         NoError,
@@ -2197,7 +2210,7 @@ namespace detria
 
 #define DETRIA_CHECK(cond) do { if (!(cond)) DETRIA_UNLIKELY { return false; } } while (0)
 
-    template <typename Point, typename Idx>
+    DETRIA_EXPORT template <typename Point, typename Idx>
     struct DefaultTriangulationConfig
     {
         // Default configuration for a triangulation.
@@ -2254,7 +2267,7 @@ namespace detria
         constexpr static bool NaNChecks = true;
     };
 
-    template <
+    DETRIA_EXPORT template <
         typename Point = PointD,
         typename Idx = uint32_t,
         typename Config = DefaultTriangulationConfig<Point, Idx>
@@ -2590,7 +2603,7 @@ namespace detria
             std::string getErrorMessage() const
             {
                 std::stringstream ss;
-                ss << "A polyline containes two duplicate consecutive points (index " << pointIndex << ")";
+                ss << "A polyline contains two duplicate consecutive points (index " << pointIndex << ")";
                 return ss.str();
             }
 
@@ -2746,7 +2759,7 @@ namespace detria
         Triangulation operator=(const Triangulation&) = delete;
         Triangulation(Triangulation&&) = default;
 
-        // If the triangulation failed, this function returns the type of the error that occured
+        // If the triangulation failed, this function returns the type of the error that occurred
         TriangulationError getError() const
         {
             TriangulationError err{ };
@@ -4242,7 +4255,7 @@ namespace detria
                     if (std::optional<Idx> polylineIndex = edgeData.getOutlineOrHoleIndex())
                     {
                         // Check which type of edge we just crossed (if this branch is entered, then it's part of either an outline or a hole)
-                        // There are a few possibilites:
+                        // There are a few possibilities:
                         // If the triangle is inside, and the edge is part of an outline,
                         // then the outline's index must be the same as the triangle's parent polyline index
                         // Otherwise it would mean that there is an outline inside another outline, which is not allowed
@@ -4299,7 +4312,8 @@ namespace detria
                         else
                         {
                             // We are outside and crossing a hole, or we are inside and crossing an outline
-                            if (currentTriangleLocationData->parentPolylineIndex == *polylineIndex) DETRIA_LIKELY
+                            if (currentTriangleLocationData->parentPolylineIndex.has_value() &&
+                                *currentTriangleLocationData->parentPolylineIndex == *polylineIndex) DETRIA_LIKELY
                             {
                                 // Valid case, the neighbor triangle is the opposite location
                                 // Set its polyline index to the current polyline's parent
@@ -4483,6 +4497,7 @@ namespace detria
 
 #undef DETRIA_LIKELY
 #undef DETRIA_UNLIKELY
+#undef DETRIA_EXPORT
 }
 
 #endif // DETRIA_HPP_INCLUDED
