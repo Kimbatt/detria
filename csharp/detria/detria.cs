@@ -2275,8 +2275,8 @@ namespace detria
             _points = points;
         }
 
-        /// <see cref="AddOutline"/>, <see cref="AddHole"/>, and <see cref="AddPolylineAutoDetectType"/> return the polyline's index,
-        /// which can be used to get its parent, using the <see cref="TryGetParentPolylineIndex"/> method.
+        // `AddOutline`, `AddHole`, and `AddPolylineAutoDetectType` return the polyline's index,
+        // which can be used to get its parent, using the `TryGetParentPolylineIndex` method.
 
         /// <summary>
         /// Add an outline - regions surrounded by outlines are "solid", and will be part of the "inside" triangles.
@@ -2315,7 +2315,7 @@ namespace detria
         /// <summary>
         /// Add a polyline, and automatically decide if it's an outline or a hole.
         /// </summary>
-        /// <param name="hole">List of point indices for this polyline.</param>
+        /// <param name="polyline">List of point indices for this polyline.</param>
         public Idx AddPolylineAutoDetectType(IReadOnlyList<Idx> polyline)
         {
             Idx id = (Idx)_polylines.Count;
