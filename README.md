@@ -9,6 +9,7 @@
 - Properly handle edge cases (e.g. collinear or cocircular points) 
 - Allows custom user types to be used (e.g. custom point type, custom allocator, etc.)
 - Single file library
+- Available for C++ and C#
 
 ## Examples
 Delaunay triangulation of a point set:  
@@ -25,10 +26,13 @@ Holes inside holes:
 ![](images/fractal.png)
 
 ## Requirements
-Requires C++17 or later.  
+This library is available for C++ and C#.  
+More information about the C# version can be found [here](csharp/README.md).
+
+The C++ version requires C++17 or later.  
 No external dependencies are used, only the C++ standard library.
 
-## Usage
+## Usage (C++)
 Just include [`detria.hpp`](include/detria.hpp) in your project.
 
 C++20 modules are also supported: add [`detria.cppm`](include/detria.cppm) and [`detria.hpp`](include/detria.hpp) to your project, then `import detria;`
@@ -73,7 +77,8 @@ if (success)
 }
 ```
 
-## [Documentation](DOCS.md)
+## [Documentation (C++)](DOCS.md)
+## [Documentation (C#)](csharp/README.md)
 
 ## Geometric robustness
 This library uses the [Fast Robust Predicates for Computational Geometry](https://www.cs.cmu.edu/~quake/robust.html) library.  
