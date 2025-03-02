@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35728.132
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "detria", "detria\detria.csproj", "{44E24F82-75E9-4458-91AE-8D273E6B568F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "detria-test", "detria-test\detria-test.csproj", "{600FE0FA-686E-4FD5-8A10-B3224DC9A7C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "detria-exe", "detria-exe\detria-exe.csproj", "{F9F53C4A-833D-4EEE-9006-19C57BC3DF42}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{44E24F82-75E9-4458-91AE-8D273E6B568F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44E24F82-75E9-4458-91AE-8D273E6B568F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44E24F82-75E9-4458-91AE-8D273E6B568F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44E24F82-75E9-4458-91AE-8D273E6B568F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{600FE0FA-686E-4FD5-8A10-B3224DC9A7C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{600FE0FA-686E-4FD5-8A10-B3224DC9A7C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{600FE0FA-686E-4FD5-8A10-B3224DC9A7C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{600FE0FA-686E-4FD5-8A10-B3224DC9A7C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9F53C4A-833D-4EEE-9006-19C57BC3DF42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9F53C4A-833D-4EEE-9006-19C57BC3DF42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9F53C4A-833D-4EEE-9006-19C57BC3DF42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9F53C4A-833D-4EEE-9006-19C57BC3DF42}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

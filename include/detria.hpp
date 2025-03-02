@@ -328,12 +328,20 @@ namespace detria
                     if ((fnow > enow) == (fnow > -enow))
                     {
                         DETRIA_Two_Sum(Q, enow, Qnew, hh);
-                        enow = e[++eindex];
+
+                        if (++eindex < elen)
+                        {
+                            enow = e[eindex];
+                        }
                     }
                     else
                     {
                         DETRIA_Two_Sum(Q, fnow, Qnew, hh);
-                        fnow = f[++findex];
+
+                        if (++findex < flen)
+                        {
+                            fnow = f[findex];
+                        }
                     }
                     Q = Qnew;
                     if (hh != Scalar(0))
@@ -345,7 +353,12 @@ namespace detria
             while (eindex < elen)
             {
                 DETRIA_Two_Sum(Q, enow, Qnew, hh);
-                enow = e[++eindex];
+
+                if (++eindex < elen)
+                {
+                    enow = e[eindex];
+                }
+
                 Q = Qnew;
                 if (hh != Scalar(0))
                 {
@@ -355,7 +368,12 @@ namespace detria
             while (findex < flen)
             {
                 DETRIA_Two_Sum(Q, fnow, Qnew, hh);
-                fnow = f[++findex];
+
+                if (++findex < flen)
+                {
+                    fnow = f[findex];
+                }
+
                 Q = Qnew;
                 if (hh != Scalar(0))
                 {
@@ -1427,8 +1445,8 @@ namespace detria
             {
             }
 
-            template <template <typename, typename> typename Collection, typename Allocator>
-            ReadonlySpan(const Collection<T, Allocator>& collection) : _ptr(collection.data()), _count(collection.size())
+            template <typename Collection>
+            ReadonlySpan(const Collection& collection) : _ptr(collection.data()), _count(collection.size())
             {
             }
 
@@ -1985,17 +2003,6 @@ namespace detria
                 return newEdgeIndexA;
             }
 
-            inline HalfEdgeIndex createOrGetEdge(VertexIndex a, VertexIndex b, HalfEdgeIndex afterEdgeA, HalfEdgeIndex afterEdgeB)
-            {
-                HalfEdgeIndex existingEdge = getEdgeBetween(a, b);
-                if (existingEdge.isValid())
-                {
-                    return *existingEdge;
-                }
-
-                return createNewEdge(a, b, afterEdgeA, afterEdgeB);
-            }
-
             template <typename Callback>
             inline void forEachEdgeOfVertex(VertexIndex idx, Callback callback) const
             {
@@ -2036,8 +2043,8 @@ namespace detria
                 // Assuming the vertices of this edge have at least one other edge
                 // The first edge of the vertices will not be set correctly otherwise
 
-                HalfEdge& edge = getEdge(edgeIndex);
-                HalfEdge& opposite = getEdge(getOpposite(edgeIndex));
+                const HalfEdge& edge = getEdge(edgeIndex);
+                const HalfEdge& opposite = getEdge(getOpposite(edgeIndex));
 
                 Vertex& v0 = getVertex(edge.vertex);
                 Vertex& v1 = getVertex(opposite.vertex);
@@ -2323,7 +2330,7 @@ namespace detria
             {
                 None = 0,
                 Delaunay = 1,
-                Boundary = 2
+                Boundary = 2,
             };
 
             inline bool isConstrained() const
@@ -2708,7 +2715,7 @@ namespace detria
 
             std::string getErrorMessage() const
             {
-                return "Internal error, this is a bug in the code";
+                return "Internal error, this indicates a bug in detria's code";
             }
         };
 
@@ -2858,9 +2865,9 @@ namespace detria
         }
 
         // Set a single constrained edge, which will be part of the final triangulation
-        void setConstrainedEdge(const Idx& idxA, const Idx& idxB)
+        void setConstrainedEdge(const Idx& vertexIndexA, const Idx& vertexIndexB)
         {
-            _manuallyConstrainedEdges.push_back({ idxA, idxB });
+            _manuallyConstrainedEdges.push_back({ vertexIndexA, vertexIndexB });
         }
 
         // Perform the triangulation
@@ -4197,6 +4204,7 @@ namespace detria
             checkedTriangles[size_t(startingTriangle.index)] = true;
 
             CollectionWithAllocator<TriangleIndex>& trianglesToCheck = _classifyTriangles_TrianglesToCheck;
+            trianglesToCheck.clear();
             trianglesToCheck.push_back(startingTriangle);
 
             if (startingEdgeType == EdgeType::AutoDetect)
