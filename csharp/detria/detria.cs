@@ -110,15 +110,252 @@ namespace detria
             errorBounds = CalculateErrorBounds();
         }
 
-        internal struct ErrorBounds
+        private readonly Scalar[] _buffer;
+
+        private DataView B;
+        private readonly DataView C1;
+        private readonly DataView C2;
+        private readonly DataView D;
+        private DataView u;
+        private DataView bc;
+        private DataView ca;
+        private DataView ab;
+        private readonly DataView axbc;
+        private readonly DataView axxbc;
+        private readonly DataView aybc;
+        private readonly DataView ayybc;
+        private readonly DataView adet;
+        private readonly DataView bxca;
+        private readonly DataView bxxca;
+        private readonly DataView byca;
+        private readonly DataView byyca;
+        private readonly DataView bdet;
+        private readonly DataView cxab;
+        private readonly DataView cxxab;
+        private readonly DataView cyab;
+        private readonly DataView cyyab;
+        private readonly DataView cdet;
+        private readonly DataView abdet;
+        private readonly DataView fin1;
+        private readonly DataView fin2;
+        private DataView aa;
+        private DataView bb;
+        private DataView cc;
+        private DataView v;
+        private readonly DataView temp8;
+        private readonly DataView temp16a;
+        private readonly DataView temp16b;
+        private readonly DataView temp16c;
+        private readonly DataView temp32a;
+        private readonly DataView temp32b;
+        private readonly DataView temp48;
+        private readonly DataView temp64;
+        private readonly DataView axtbb;
+        private readonly DataView axtcc;
+        private readonly DataView aytbb;
+        private readonly DataView aytcc;
+        private readonly DataView bxtaa;
+        private readonly DataView bxtcc;
+        private readonly DataView bytaa;
+        private readonly DataView bytcc;
+        private readonly DataView cxtaa;
+        private readonly DataView cxtbb;
+        private readonly DataView cytaa;
+        private readonly DataView cytbb;
+        private readonly DataView axtbc;
+        private readonly DataView aytbc;
+        private readonly DataView bxtca;
+        private readonly DataView bytca;
+        private readonly DataView cxtab;
+        private readonly DataView cytab;
+        private readonly DataView axtbct;
+        private readonly DataView aytbct;
+        private readonly DataView bxtcat;
+        private readonly DataView bytcat;
+        private readonly DataView cxtabt;
+        private readonly DataView cytabt;
+        private readonly DataView axtbctt;
+        private readonly DataView aytbctt;
+        private readonly DataView bxtcatt;
+        private readonly DataView bytcatt;
+        private readonly DataView cxtabtt;
+        private readonly DataView cytabtt;
+        private DataView abt;
+        private DataView bct;
+        private DataView cat;
+        private DataView abtt;
+        private DataView bctt;
+        private DataView catt;
+
+        public Predicates()
         {
-            public Scalar splitter;
-            public Scalar epsilon;
-            public Scalar resulterrbound;
-            public Scalar ccwerrboundA, ccwerrboundB, ccwerrboundC;
-            public Scalar o3derrboundA, o3derrboundB, o3derrboundC;
-            public Scalar iccerrboundA, iccerrboundB, iccerrboundC;
-            public Scalar isperrboundA, isperrboundB, isperrboundC;
+            const int totalCount =
+               4 + // B
+               8 + // C1
+               12 + // C2
+               16 + // D
+               4 + // u
+               4 + // bc
+               4 + // ca
+               4 + // ab
+               8 + // axbc
+               16 + // axxbc
+               8 + // aybc
+               16 + // ayybc
+               32 + // adet
+               8 + // bxca
+               16 + // bxxca
+               8 + // byca
+               16 + // byyca
+               32 + // bdet
+               8 + // cxab
+               16 + // cxxab
+               8 + // cyab
+               16 + // cyyab
+               32 + // cdet
+               64 + // abdet
+               1152 + // fin1
+               1152 + // fin2
+               4 + // aa
+               4 + // bb
+               4 + // cc
+               4 + // v
+               8 + // temp8
+               16 + // temp16a
+               16 + // temp16b
+               16 + // temp16c
+               32 + // temp32a
+               32 + // temp32b
+               48 + // temp48
+               64 + // temp64
+               8 + // axtbb
+               8 + // axtcc
+               8 + // aytbb
+               8 + // aytcc
+               8 + // bxtaa
+               8 + // bxtcc
+               8 + // bytaa
+               8 + // bytcc
+               8 + // cxtaa
+               8 + // cxtbb
+               8 + // cytaa
+               8 + // cytbb
+               8 + // axtbc
+               8 + // aytbc
+               8 + // bxtca
+               8 + // bytca
+               8 + // cxtab
+               8 + // cytab
+               16 + // axtbct
+               16 + // aytbct
+               16 + // bxtcat
+               16 + // bytcat
+               16 + // cxtabt
+               16 + // cytabt
+               8 + // axtbctt
+               8 + // aytbctt
+               8 + // bxtcatt
+               8 + // bytcatt
+               8 + // cxtabtt
+               8 + // cytabtt
+               8 + // abt
+               8 + // bct
+               8 + // cat
+               4 + // abtt
+               4 + // bctt
+               4; // catt
+
+            _buffer = new Scalar[totalCount];
+
+            int offset = 0;
+            DataView CreateDataView(int count)
+            {
+                DataView view = new DataView(_buffer, offset, count);
+                offset += count;
+                return view;
+            }
+
+            B = CreateDataView(4);
+            C1 = CreateDataView(8);
+            C2 = CreateDataView(12);
+            D = CreateDataView(16);
+            u = CreateDataView(4);
+            bc = CreateDataView(4);
+            ca = CreateDataView(4);
+            ab = CreateDataView(4);
+            axbc = CreateDataView(8);
+            axxbc = CreateDataView(16);
+            aybc = CreateDataView(8);
+            ayybc = CreateDataView(16);
+            adet = CreateDataView(32);
+            bxca = CreateDataView(8);
+            bxxca = CreateDataView(16);
+            byca = CreateDataView(8);
+            byyca = CreateDataView(16);
+            bdet = CreateDataView(32);
+            cxab = CreateDataView(8);
+            cxxab = CreateDataView(16);
+            cyab = CreateDataView(8);
+            cyyab = CreateDataView(16);
+            cdet = CreateDataView(32);
+            abdet = CreateDataView(64);
+            fin1 = CreateDataView(1152);
+            fin2 = CreateDataView(1152);
+            aa = CreateDataView(4);
+            bb = CreateDataView(4);
+            cc = CreateDataView(4);
+            v = CreateDataView(4);
+            temp8 = CreateDataView(8);
+            temp16a = CreateDataView(16);
+            temp16b = CreateDataView(16);
+            temp16c = CreateDataView(16);
+            temp32a = CreateDataView(32);
+            temp32b = CreateDataView(32);
+            temp48 = CreateDataView(48);
+            temp64 = CreateDataView(64);
+            axtbb = CreateDataView(8);
+            axtcc = CreateDataView(8);
+            aytbb = CreateDataView(8);
+            aytcc = CreateDataView(8);
+            bxtaa = CreateDataView(8);
+            bxtcc = CreateDataView(8);
+            bytaa = CreateDataView(8);
+            bytcc = CreateDataView(8);
+            cxtaa = CreateDataView(8);
+            cxtbb = CreateDataView(8);
+            cytaa = CreateDataView(8);
+            cytbb = CreateDataView(8);
+            axtbc = CreateDataView(8);
+            aytbc = CreateDataView(8);
+            bxtca = CreateDataView(8);
+            bytca = CreateDataView(8);
+            cxtab = CreateDataView(8);
+            cytab = CreateDataView(8);
+            axtbct = CreateDataView(16);
+            aytbct = CreateDataView(16);
+            bxtcat = CreateDataView(16);
+            bytcat = CreateDataView(16);
+            cxtabt = CreateDataView(16);
+            cytabt = CreateDataView(16);
+            axtbctt = CreateDataView(8);
+            aytbctt = CreateDataView(8);
+            bxtcatt = CreateDataView(8);
+            bytcatt = CreateDataView(8);
+            cxtabtt = CreateDataView(8);
+            cytabtt = CreateDataView(8);
+            abt = CreateDataView(8);
+            bct = CreateDataView(8);
+            cat = CreateDataView(8);
+            abtt = CreateDataView(4);
+            bctt = CreateDataView(4);
+            catt = CreateDataView(4);
+
+#if DEBUG
+            if (offset != totalCount)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
+#endif
         }
 
         internal static ErrorBounds CalculateErrorBounds()
@@ -165,7 +402,7 @@ namespace detria
             };
         }
 
-        private static Scalar Estimate(int elen, Scalar[] e)
+        private static Scalar Estimate(int elen, DataView e)
         {
             Scalar Q = e[0];
             for (int eindex = 1; eindex < elen; eindex++)
@@ -181,7 +418,7 @@ namespace detria
             return a >= 0 ? a : -a;
         }
 
-        private static int FastExpansionSumZeroelim(int elen, Scalar[] e, int flen, Scalar[] f, Scalar[] h)
+        private static int FastExpansionSumZeroelim(int elen, DataView e, int flen, DataView f, DataView h)
         {
             Scalar Q;
             Scalar Qnew;
@@ -286,84 +523,6 @@ namespace detria
             return hindex;
         }
 
-        private readonly Scalar[] B = new Scalar[4];
-        private readonly Scalar[] C1 = new Scalar[8];
-        private readonly Scalar[] C2 = new Scalar[12];
-        private readonly Scalar[] D = new Scalar[16];
-        private readonly Scalar[] u = new Scalar[4];
-
-        private readonly Scalar[] bc = new Scalar[4];
-        private readonly Scalar[] ca = new Scalar[4];
-        private readonly Scalar[] ab = new Scalar[4];
-        private readonly Scalar[] axbc = new Scalar[8];
-        private readonly Scalar[] axxbc = new Scalar[16];
-        private readonly Scalar[] aybc = new Scalar[8];
-        private readonly Scalar[] ayybc = new Scalar[16];
-        private readonly Scalar[] adet = new Scalar[32];
-        private readonly Scalar[] bxca = new Scalar[8];
-        private readonly Scalar[] bxxca = new Scalar[16];
-        private readonly Scalar[] byca = new Scalar[8];
-        private readonly Scalar[] byyca = new Scalar[16];
-        private readonly Scalar[] bdet = new Scalar[32];
-        private readonly Scalar[] cxab = new Scalar[8];
-        private readonly Scalar[] cxxab = new Scalar[16];
-        private readonly Scalar[] cyab = new Scalar[8];
-        private readonly Scalar[] cyyab = new Scalar[16];
-        private readonly Scalar[] cdet = new Scalar[32];
-        private readonly Scalar[] abdet = new Scalar[64];
-        private readonly Scalar[] fin1 = new Scalar[1152];
-        private readonly Scalar[] fin2 = new Scalar[1152];
-        private readonly Scalar[] aa = new Scalar[4];
-        private readonly Scalar[] bb = new Scalar[4];
-        private readonly Scalar[] cc = new Scalar[4];
-        //private readonly Scalar[] u = new Scalar[4];
-        private readonly Scalar[] v = new Scalar[4];
-        private readonly Scalar[] temp8 = new Scalar[8];
-        private readonly Scalar[] temp16a = new Scalar[16];
-        private readonly Scalar[] temp16b = new Scalar[16];
-        private readonly Scalar[] temp16c = new Scalar[16];
-        private readonly Scalar[] temp32a = new Scalar[32];
-        private readonly Scalar[] temp32b = new Scalar[32];
-        private readonly Scalar[] temp48 = new Scalar[48];
-        private readonly Scalar[] temp64 = new Scalar[64];
-        private readonly Scalar[] axtbb = new Scalar[8];
-        private readonly Scalar[] axtcc = new Scalar[8];
-        private readonly Scalar[] aytbb = new Scalar[8];
-        private readonly Scalar[] aytcc = new Scalar[8];
-        private readonly Scalar[] bxtaa = new Scalar[8];
-        private readonly Scalar[] bxtcc = new Scalar[8];
-        private readonly Scalar[] bytaa = new Scalar[8];
-        private readonly Scalar[] bytcc = new Scalar[8];
-        private readonly Scalar[] cxtaa = new Scalar[8];
-        private readonly Scalar[] cxtbb = new Scalar[8];
-        private readonly Scalar[] cytaa = new Scalar[8];
-        private readonly Scalar[] cytbb = new Scalar[8];
-        private readonly Scalar[] axtbc = new Scalar[8];
-        private readonly Scalar[] aytbc = new Scalar[8];
-        private readonly Scalar[] bxtca = new Scalar[8];
-        private readonly Scalar[] bytca = new Scalar[8];
-        private readonly Scalar[] cxtab = new Scalar[8];
-        private readonly Scalar[] cytab = new Scalar[8];
-        private readonly Scalar[] axtbct = new Scalar[16];
-        private readonly Scalar[] aytbct = new Scalar[16];
-        private readonly Scalar[] bxtcat = new Scalar[16];
-        private readonly Scalar[] bytcat = new Scalar[16];
-        private readonly Scalar[] cxtabt = new Scalar[16];
-        private readonly Scalar[] cytabt = new Scalar[16];
-        private readonly Scalar[] axtbctt = new Scalar[8];
-        private readonly Scalar[] aytbctt = new Scalar[8];
-        private readonly Scalar[] bxtcatt = new Scalar[8];
-        private readonly Scalar[] bytcatt = new Scalar[8];
-        private readonly Scalar[] cxtabtt = new Scalar[8];
-        private readonly Scalar[] cytabtt = new Scalar[8];
-        private readonly Scalar[] abt = new Scalar[8];
-        private readonly Scalar[] bct = new Scalar[8];
-        private readonly Scalar[] cat = new Scalar[8];
-        private readonly Scalar[] abtt = new Scalar[4];
-        private readonly Scalar[] bctt = new Scalar[4];
-        private readonly Scalar[] catt = new Scalar[4];
-
-
         public Scalar Orient2dAdapt(Scalar paX, Scalar paY, Scalar pbX, Scalar pbY, Scalar pcX, Scalar pcY, Scalar detsum)
         {
             Scalar acx, acy, bcx, bcy;
@@ -442,7 +601,7 @@ namespace detria
             return (D[Dlength - 1]);
         }
 
-        private static int ScaleExpansionZeroelim(int elen, Scalar[] e, Scalar b, Scalar[] h)
+        private static int ScaleExpansionZeroelim(int elen, DataView e, Scalar b, DataView h)
         {
             Scalar Q, sum;
             Scalar hh;
@@ -502,7 +661,7 @@ namespace detria
             int bxcalen, bxxcalen, bycalen, byycalen, blen;
             int cxablen, cxxablen, cyablen, cyyablen, clen;
             int ablen;
-            Scalar[] finnow, finother, finswap;
+            DataView finnow, finother, finswap;
             int finlength;
 
             Scalar adxtail, bdxtail, cdxtail, adytail, bdytail, cdytail;
@@ -1001,6 +1160,63 @@ namespace detria
             }
 
             return finnow[finlength - 1];
+        }
+
+        internal struct ErrorBounds
+        {
+            public Scalar splitter;
+            public Scalar epsilon;
+            public Scalar resulterrbound;
+            public Scalar ccwerrboundA, ccwerrboundB, ccwerrboundC;
+            public Scalar o3derrboundA, o3derrboundB, o3derrboundC;
+            public Scalar iccerrboundA, iccerrboundB, iccerrboundC;
+            public Scalar isperrboundA, isperrboundB, isperrboundC;
+        }
+
+        private struct DataView
+        {
+            private readonly Scalar[] _array;
+            private readonly int _offset;
+
+#if DEBUG
+            private readonly int _count;
+#endif
+
+            public DataView(Scalar[] array, int offset, int count)
+            {
+                _array = array;
+                _offset = offset;
+#if DEBUG
+                _count = count;
+#endif
+            }
+
+            public Scalar this[int index]
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+#if DEBUG
+                    if (index < 0 || index >= _count)
+                    {
+                        throw new IndexOutOfRangeException();
+                    }
+#endif
+                    return _array[_offset + index];
+                }
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                set
+                {
+#if DEBUG
+                    if (index < 0 || index >= _count)
+                    {
+                        throw new IndexOutOfRangeException();
+                    }
+#endif
+                    _array[_offset + index] = value;
+                }
+            }
         }
     }
 
