@@ -47,8 +47,32 @@
 /// See https://github.com/Kimbatt/detria for more information.
 /// License: WTFPL or MIT, at your choice. You can find the license texts at the bottom of this file.
 
-using Scalar = float;
-using Idx = int;
+
+#if UNITY_5_3_OR_NEWER
+
+// Using Unity engine - use the built-in Vector2 class
+using Vec2 = UnityEngine.Vector2;
+
+// Always use floats in this case, since Vector2 uses floats
+// Also, there is no need to use doubles for better precision - since detria uses exact arithmetic,
+// using double precision will not improve the triangulation result
+using Scalar = System.Single;
+
+#else
+
+using Scalar =
+#if DETRIA_DOUBLE_PRECISION
+    // double
+    System.Double
+#else
+    // float
+    System.Single
+#endif
+    ;
+
+#endif
+
+using Idx = System.Int32; // int
 
 using System;
 using System.Collections.Generic;
@@ -57,6 +81,7 @@ using System.Runtime.CompilerServices;
 
 namespace detria
 {
+#if !UNITY_5_3_OR_NEWER
     public struct Vec2
     {
         public Scalar x;
@@ -73,6 +98,7 @@ namespace detria
             return $"{x}, {y}";
         }
     }
+#endif
 
     public struct Triangle
     {
@@ -1300,11 +1326,12 @@ namespace detria
 
         public static CircleLocation Incircle(Predicates pred, Vec2 a, Vec2 b, Vec2 c, Vec2 d)
         {
-#if false
-//# ifndef NDEBUG
-//            // The points pa, pb, and pc must be in counterclockwise order, or the sign of the result will be reversed
-//            detail::detriaAssert(math::orient2d<Robust, Vec2>(a, b, c) == math::Orientation::CCW);
-//#endif
+#if DEBUG
+            // The points pa, pb, and pc must be in counterclockwise order, or the sign of the result will be reversed
+            if (Orient2d(pred, a, b, c) != Orientation.CCW)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
 #endif
 
             Scalar pa0 = a.x;
@@ -1403,10 +1430,7 @@ namespace detria
         public bool HasValue
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return value != Constants.NullIndex;
-            }
+            get => value != Constants.NullIndex;
         }
 
         public Idx Value
@@ -1440,10 +1464,7 @@ namespace detria
         public static NullableIdx Null
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return new NullableIdx(Constants.NullIndex);
-            }
+            get => new NullableIdx(Constants.NullIndex);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1469,10 +1490,7 @@ namespace detria
             return Equals(other);
         }
 
-        public override int GetHashCode()
-        {
-            return value.GetHashCode();
-        }
+        public override int GetHashCode() => value.GetHashCode();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(NullableIdx other)
@@ -1520,10 +1538,7 @@ namespace detria
         public bool IsValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return index.HasValue;
-            }
+            get => index.HasValue;
         }
 
         public override bool Equals(object obj)
@@ -1567,10 +1582,7 @@ namespace detria
         public static HalfEdgeIndex Null
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return new HalfEdgeIndex(NullableIdx.Null);
-            }
+            get => new HalfEdgeIndex(NullableIdx.Null);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1588,10 +1600,7 @@ namespace detria
         public bool IsValid
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return index.HasValue;
-            }
+            get => index.HasValue;
         }
 
         public override bool Equals(object obj)
@@ -1646,37 +1655,25 @@ namespace detria
         public bool IsDelaunay
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return HasFlag(Flags.Delaunay);
-            }
+            get => HasFlag(Flags.Delaunay);
         }
 
         public bool IsBoundary
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return HasFlag(Flags.Boundary);
-            }
+            get => HasFlag(Flags.Boundary);
         }
 
         public bool IsConstrained
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return dataType != DataType.NotConstrained;
-            }
+            get => dataType != DataType.NotConstrained;
         }
 
         public NullableIdx OutlineOrHoleIndex
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return dataType == DataType.OutlineOrHole ? polylineIndex : NullableIdx.Null;
-            }
+            get => dataType == DataType.OutlineOrHole ? polylineIndex : NullableIdx.Null;
         }
 
         public EdgeType EdgeType
@@ -1789,13 +1786,10 @@ namespace detria
             public static Vertex Null
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
+                get => new Vertex
                 {
-                    return new Vertex
-                    {
-                        firstEdge = HalfEdgeIndex.Null,
-                    };
-                }
+                    firstEdge = HalfEdgeIndex.Null,
+                };
             }
         }
 
@@ -1810,34 +1804,25 @@ namespace detria
             public static HalfEdge Null
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
+                get => new HalfEdge
                 {
-                    return new HalfEdge
-                    {
-                        vertex = VertexIndex.Null,
-                        prevEdge = HalfEdgeIndex.Null,
-                        nextEdge = HalfEdgeIndex.Null,
-                    };
-                }
+                    vertex = VertexIndex.Null,
+                    prevEdge = HalfEdgeIndex.Null,
+                    nextEdge = HalfEdgeIndex.Null,
+                };
             }
         }
 
         public int VertexCount
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return _vertices.Count;
-            }
+            get => _vertices.Count;
         }
 
         public int HalfEdgeCount
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return _edges.Count;
-            }
+            get => _edges.Count;
         }
 
         public void Clear()
@@ -2255,38 +2240,26 @@ namespace detria
         /// <summary>
         /// Returns information about why the triangulation failed.
         /// </summary>
-        public ITriangulationError Error
-        {
-            get
-            {
-                return _error;
-            }
-        }
+        public ITriangulationError Error => _error;
 
         /// <summary>
         /// Returns the number of all triangles created during the triangulation, can be used e.g. to reserve memory for the results.
         /// Note that this number is usually greater than the number of "interesting" triangles,
         /// since it contains the interior, hole, and convex hull triangles as well.
         /// </summary>
-        public int MaxNumTriangles
-        {
-            get
-            {
-                return _resultTriangles.Count;
-            }
-        }
+        public int MaxNumTriangles => _resultTriangles.Count;
 
         /// <summary>
         /// Returns the half-edge data structure created during the triangulation.
         /// There is usually no need to access this data, this is mostly used for testing.
         /// </summary>
-        public Topology Topology
-        {
-            get
-            {
-                return _topology;
-            }
-        }
+        public Topology Topology => _topology;
+
+        /// <summary>
+        /// Returns the predicates instance for exact geometric calculations.
+        /// This is also mainly used for testing.
+        /// </summary>
+        public Predicates Predicates => _pred;
 
         /// <summary>
         /// Set all points which will be used for the triangulation.
@@ -2355,7 +2328,6 @@ namespace detria
 
             return id;
         }
-
 
         /// <summary>
         /// Set a single constrained edge, which will be part of the final triangulation.
@@ -2835,7 +2807,7 @@ namespace detria
 
         private readonly Predicates _pred = new Predicates();
 
-        // Guess capacity, 64 should be a good starting point
+        // Initial capacity for lists with unknown length, 64 should be a good starting point
         private const int InitialCapacity = 64;
 
         private struct TriangleWithData
@@ -2883,10 +2855,7 @@ namespace detria
             public static TriangleIndex Null
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
-                {
-                    return new TriangleIndex(NullableIdx.Null);
-                }
+                get => new TriangleIndex(NullableIdx.Null);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2904,10 +2873,7 @@ namespace detria
             public bool IsValid
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
-                {
-                    return index != Constants.NullIndex;
-                }
+                get => index != Constants.NullIndex;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3047,10 +3013,8 @@ namespace detria
             // Set initial convex hull vertex - the first sorted point is guaranteed to be part of the convex hull
             _convexHullInitialVertex = new VertexIndex(sortedPoints[0]);
 
-            bool allPointsAreCollinear;
-
             // Initial triangulation, will add the edges
-            if (!CreateInitialTriangulation(delaunay, sortedPoints, 0, sortedPoints.Count, out allPointsAreCollinear))
+            if (!CreateInitialTriangulation(delaunay, sortedPoints, 0, sortedPoints.Count, out bool allPointsAreCollinear))
             {
                 return false;
             }
@@ -3300,11 +3264,11 @@ namespace detria
         // It will always be empty when this function returns
         private bool DelaunayEdgeFlip()
         {
-            TopologyEdgeWithVertices edgeWithVertices;
-
             // Flip edges if needed
-            while (_delaunayCheckStack.TryPop(out edgeWithVertices))
+            while (_delaunayCheckStack.Count > 0)
             {
+                TopologyEdgeWithVertices edgeWithVertices = _delaunayCheckStack.Pop();
+
                 HalfEdgeIndex e01 = edgeWithVertices.edge;
                 HalfEdgeIndex e10 = Topology.GetOpposite(e01);
 
@@ -3604,12 +3568,8 @@ namespace detria
             Idx p0 = v0.index.Value;
             Idx p1 = v1.index.Value;
 
-            HalfEdgeIndex initialTriangleEdge;
-            VertexIndex vertexCW;
-            VertexIndex vertexCCW;
-
             // Find initial triangle, which is in the direction of the other point
-            if (!FindInitialTriangleForConstrainedEdge(v0, v1, p0, p1, out initialTriangleEdge, out vertexCW, out vertexCCW))
+            if (!FindInitialTriangleForConstrainedEdge(v0, v1, p0, p1, out HalfEdgeIndex initialTriangleEdge, out VertexIndex vertexCW, out VertexIndex vertexCCW))
             {
                 return false;
             }
@@ -4164,9 +4124,9 @@ namespace detria
                 }
             }
 
-            TriangleIndex currentTriangle;
-            while (trianglesToCheck.TryPop(out currentTriangle))
+            while (trianglesToCheck.Count > 0)
             {
+                TriangleIndex currentTriangle = trianglesToCheck.Pop();
                 TriangleData currentTriangleData = _resultTriangles[(int)currentTriangle.index.Value].data;
                 NullableIdx currentTriangleParentPolylineIndex = currentTriangleData.parentPolylineIndex;
 #if DEBUG

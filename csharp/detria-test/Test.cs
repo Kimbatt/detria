@@ -49,8 +49,6 @@ public class TriangulationInput
 [TestClass]
 public sealed class Test
 {
-    private static readonly Predicates _pred = new();
-
     public static void SetupTriangulation(Triangulation triangulation, TriangulationInput input)
     {
         triangulation.Clear();
@@ -132,7 +130,7 @@ public sealed class Test
             Vec2 b = input.points[(int)tri.y];
             Vec2 c = input.points[(int)tri.z];
 
-            detria.Math.Orientation orientation = detria.Math.Orient2d(_pred, a, b, c);
+            detria.Math.Orientation orientation = detria.Math.Orient2d(triangulation.Predicates, a, b, c);
             Assert.AreEqual(detria.Math.Orientation.CCW, orientation, orientationTestErrorMessage);
         }
 
@@ -181,7 +179,7 @@ public sealed class Test
                         VertexIndex v3 = topology.GetEdge(Topology.GetOpposite(topology.GetEdge(e).prevEdge)).vertex;
                         Vec2 p3 = input.points[(int)v3.index.Value];
 
-                        detria.Math.CircleLocation incircleResult = detria.Math.Incircle(_pred, p2, p1, p0, p3);
+                        detria.Math.CircleLocation incircleResult = detria.Math.Incircle(triangulation.Predicates, p2, p1, p0, p3);
                         Assert.AreNotEqual(detria.Math.CircleLocation.Inside, incircleResult, "Non-delaunay triangle found");
                     }
 
