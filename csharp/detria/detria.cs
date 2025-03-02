@@ -53,6 +53,7 @@ using Idx = int;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace detria
 {
@@ -174,6 +175,7 @@ namespace detria
             return Q;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Scalar Absolute(Scalar a)
         {
             return a >= 0 ? a : -a;
@@ -1147,30 +1149,13 @@ namespace detria
 
     internal static class Detail
     {
-        private static bool IsDebug()
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void ThrowAssertionFailedError()
         {
-#if DEBUG
-            return true;
-#else
-            return false;
-#endif
+            throw new Exception("Assertion failed");
         }
 
-        public static bool DebugAssert(bool condition)
-        {
-            if (condition)
-            {
-                return true;
-            }
-
-            if (IsDebug())
-            {
-                throw new Exception("Assertion failed");
-            }
-
-            return false;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Reserve<T>(List<T> collection, int capacity)
         {
             if (collection.Capacity < capacity)
@@ -1201,6 +1186,7 @@ namespace detria
 
         public bool HasValue
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return value != Constants.NullIndex;
@@ -1209,18 +1195,27 @@ namespace detria
 
         public Idx Value
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                Detail.DebugAssert(HasValue);
+#if DEBUG
+                if (!HasValue)
+                {
+                    Detail.ThrowAssertionFailedError();
+                }
+#endif
+
                 return value;
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NullableIdx(Idx value)
         {
             this.value = value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator NullableIdx(Idx idx)
         {
             return new NullableIdx(idx);
@@ -1228,17 +1223,20 @@ namespace detria
 
         public static NullableIdx Null
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return new NullableIdx(Constants.NullIndex);
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(NullableIdx a, NullableIdx b)
         {
             return a.Equals(b);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(NullableIdx a, NullableIdx b)
         {
             return !a.Equals(b);
@@ -1260,6 +1258,7 @@ namespace detria
             return value.GetHashCode();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(NullableIdx other)
         {
             return value == other.value;
@@ -1275,6 +1274,7 @@ namespace detria
     {
         public NullableIdx index;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VertexIndex(NullableIdx index)
         {
             this.index = index;
@@ -1282,23 +1282,33 @@ namespace detria
 
         public static VertexIndex Null
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return new VertexIndex(NullableIdx.Null);
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(VertexIndex a, VertexIndex b)
         {
             return a.Equals(b);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(VertexIndex a, VertexIndex b)
         {
             return !a.Equals(b);
         }
 
-        public bool IsValid => index.HasValue;
+        public bool IsValid
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return index.HasValue;
+            }
+        }
 
         public override bool Equals(object obj)
         {
@@ -1316,6 +1326,7 @@ namespace detria
             return index.GetHashCode();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(VertexIndex other)
         {
             return index == other.index;
@@ -1331,6 +1342,7 @@ namespace detria
     {
         public NullableIdx index;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public HalfEdgeIndex(NullableIdx index)
         {
             this.index = index;
@@ -1338,23 +1350,33 @@ namespace detria
 
         public static HalfEdgeIndex Null
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 return new HalfEdgeIndex(NullableIdx.Null);
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(HalfEdgeIndex a, HalfEdgeIndex b)
         {
             return a.Equals(b);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(HalfEdgeIndex a, HalfEdgeIndex b)
         {
             return !a.Equals(b);
         }
 
-        public bool IsValid => index.HasValue;
+        public bool IsValid
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return index.HasValue;
+            }
+        }
 
         public override bool Equals(object obj)
         {
@@ -1372,6 +1394,7 @@ namespace detria
             return index.GetHashCode();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(HalfEdgeIndex other)
         {
             return index == other.index;
@@ -1404,15 +1427,45 @@ namespace detria
         public EdgeType type;
         public Idx polylineIndex;
 
+        public bool IsDelaunay
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return HasFlag(Flags.Delaunay);
+            }
+        }
 
-        public bool IsDelaunay => HasFlag(Flags.Delaunay);
-        public bool IsBoundary => HasFlag(Flags.Boundary);
-        public bool IsConstrained => dataType != DataType.NotConstrained;
+        public bool IsBoundary
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return HasFlag(Flags.Boundary);
+            }
+        }
 
-        public NullableIdx OutlineOrHoleIndex => dataType == DataType.OutlineOrHole ? polylineIndex : NullableIdx.Null;
+        public bool IsConstrained
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return dataType != DataType.NotConstrained;
+            }
+        }
+
+        public NullableIdx OutlineOrHoleIndex
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return dataType == DataType.OutlineOrHole ? polylineIndex : NullableIdx.Null;
+            }
+        }
 
         public EdgeType EdgeType
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 switch (dataType)
@@ -1433,11 +1486,13 @@ namespace detria
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool HasFlag(Flags flag)
         {
             return (flags & flag) != Flags.None;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetFlag(Flags flag, bool value)
         {
             if (value)
@@ -1450,11 +1505,13 @@ namespace detria
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetDelaunay(bool value)
         {
             SetFlag(Flags.Delaunay, value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetBoundary(bool value)
         {
             SetFlag(Flags.Boundary, value);
@@ -1515,6 +1572,7 @@ namespace detria
 
             public static Vertex Null
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     return new Vertex
@@ -1535,6 +1593,7 @@ namespace detria
 
             public static HalfEdge Null
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     return new HalfEdge
@@ -1547,8 +1606,23 @@ namespace detria
             }
         }
 
-        public int VertexCount => _vertices.Count;
-        public int HalfEdgeCount => _edges.Count;
+        public int VertexCount
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return _vertices.Count;
+            }
+        }
+
+        public int HalfEdgeCount
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return _edges.Count;
+            }
+        }
 
         public void Clear()
         {
@@ -1566,6 +1640,7 @@ namespace detria
             Detail.Reserve(_edges, capacity);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public VertexIndex CreateVertex()
         {
             Idx idx = (Idx)_vertices.Count;
@@ -1573,31 +1648,37 @@ namespace detria
             return new VertexIndex(idx);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vertex GetVertex(VertexIndex idx)
         {
             return _vertices[(int)idx.index.Value];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetVertex(VertexIndex idx, Vertex vertex)
         {
             _vertices[(int)idx.index.Value] = vertex;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public HalfEdge GetEdge(HalfEdgeIndex idx)
         {
             return _edges[(int)idx.index.Value];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetEdge(HalfEdgeIndex idx, HalfEdge edge)
         {
             _edges[(int)idx.index.Value] = edge;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public EdgeData GetEdgeData(HalfEdgeIndex idx)
         {
             return GetEdge(idx).data;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetEdgeData(HalfEdgeIndex idx, EdgeData data)
         {
             HalfEdge edge = GetEdge(idx);
@@ -1605,6 +1686,7 @@ namespace detria
             SetEdge(idx, edge);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static HalfEdgeIndex GetOpposite(HalfEdgeIndex idx)
         {
             return new HalfEdgeIndex(idx.index.Value ^ 1);
@@ -1957,20 +2039,38 @@ namespace detria
         /// <summary>
         /// Returns information about why the triangulation failed.
         /// </summary>
-        public ITriangulationError Error => _error;
+        public ITriangulationError Error
+        {
+            get
+            {
+                return _error;
+            }
+        }
 
         /// <summary>
         /// Returns the number of all triangles created during the triangulation, can be used e.g. to reserve memory for the results.
         /// Note that this number is usually greater than the number of "interesting" triangles,
         /// since it contains the interior, hole, and convex hull triangles as well.
         /// </summary>
-        public int MaxNumTriangles => _resultTriangles.Count;
+        public int MaxNumTriangles
+        {
+            get
+            {
+                return _resultTriangles.Count;
+            }
+        }
 
         /// <summary>
         /// Returns the half-edge data structure created during the triangulation.
         /// There is usually no need to access this data, this is mostly used for testing.
         /// </summary>
-        public Topology Topology => _topology;
+        public Topology Topology
+        {
+            get
+            {
+                return _topology;
+            }
+        }
 
         /// <summary>
         /// Set all points which will be used for the triangulation.
@@ -1980,6 +2080,7 @@ namespace detria
         /// The rest of the points will be steiner points.
         /// </summary>
         /// <param name="points">List of the points to be used for the triangulation.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetPoints(IReadOnlyList<Vec2> points)
         {
             _points = points;
@@ -2045,6 +2146,7 @@ namespace detria
         /// </summary>
         /// <param name="vertexIndexA">First vertex of the edge.</param>
         /// <param name="vertexIndexB">Second vertex of the edge.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetConstrainedEdge(Idx vertexIndexA, Idx vertexIndexB)
         {
             _manuallyConstrainedEdges.Add(new Edge { x = vertexIndexA, y = vertexIndexB });
@@ -2556,6 +2658,7 @@ namespace detria
         {
             public NullableIdx index;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public TriangleIndex(NullableIdx index)
             {
                 this.index = index;
@@ -2563,24 +2666,35 @@ namespace detria
 
             public static TriangleIndex Null
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     return new TriangleIndex(NullableIdx.Null);
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool operator ==(TriangleIndex a, TriangleIndex b)
             {
                 return a.Equals(b);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool operator !=(TriangleIndex a, TriangleIndex b)
             {
                 return !a.Equals(b);
             }
 
-            public bool IsValid => index != Constants.NullIndex;
+            public bool IsValid
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return index != Constants.NullIndex;
+                }
+            }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override bool Equals(object obj)
             {
                 if (!(obj is TriangleIndex))
@@ -2592,16 +2706,19 @@ namespace detria
                 return Equals(other);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override int GetHashCode()
             {
                 return index.GetHashCode();
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool Equals(TriangleIndex other)
             {
                 return index == other.index;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override string ToString()
             {
                 return index.ToString();
@@ -2920,12 +3037,14 @@ namespace detria
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private HalfEdgeIndex GetNextEdgeAlongConvexHull(HalfEdgeIndex halfEdge)
         {
             Topology.HalfEdge opposite = _topology.GetEdge(Topology.GetOpposite(halfEdge));
             return opposite.nextEdge;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private HalfEdgeIndex GetPrevEdgeAlongConvexHull(HalfEdgeIndex halfEdge)
         {
             HalfEdgeIndex prevEdge = _topology.GetEdge(halfEdge).prevEdge;
@@ -2954,6 +3073,7 @@ namespace detria
             });
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool DelaunayEdgeFlip(VertexIndex justAddedVertex, HalfEdgeIndex oppositeEdge)
         {
             AddEdgeToFlipCheck(oppositeEdge, justAddedVertex);
@@ -3059,7 +3179,13 @@ namespace detria
                     }
                     else
                     {
-                        Detail.DebugAssert(oppositeVertex.index == otherVertex1.index);
+#if DEBUG
+                        if (oppositeVertex.index != otherVertex1.index)
+                        {
+                            Detail.ThrowAssertionFailedError();
+                        }
+#endif
+
                         AddEdgeToFlipCheck(edge10.nextEdge, oppositeVertex);
                         AddEdgeToFlipCheck(edge10.prevEdge, oppositeVertex);
                     }
@@ -3208,7 +3334,7 @@ namespace detria
                             break;
 
                         default:
-                            Detail.DebugAssert(false);
+                            Detail.ThrowAssertionFailedError();
                             break;
                     }
                 }
@@ -3330,7 +3456,12 @@ namespace detria
                 return false;
             }
 
-            Detail.DebugAssert(_deletedConstrainedEdges.Count == 0);
+#if DEBUG
+            if (_deletedConstrainedEdges.Count != 0)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
+#endif
             return true;
         }
 
@@ -3440,7 +3571,12 @@ namespace detria
                 return true;
             });
 
-            Detail.DebugAssert(found);
+            if (!found)
+            {
+#if DEBUG
+                Detail.ThrowAssertionFailedError();
+#endif
+            }
 
             initialTriangleEdge = initialTriangleEdge_;
             vertexCW = vertexCW_;
@@ -3517,7 +3653,13 @@ namespace detria
             verticesCW.Add(v1);
             verticesCCW.Add(v1);
 
-            Detail.DebugAssert(verticesCW.Count >= 3 && verticesCCW.Count >= 3);
+
+#if DEBUG
+            if (verticesCW.Count < 3 || verticesCCW.Count < 3)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
+#endif
 
             return true;
         }
@@ -3555,7 +3697,12 @@ namespace detria
 
             HalfEdgeIndex GetReusedEdge()
             {
-                Detail.DebugAssert(_deletedConstrainedEdges.Count != 0);
+#if DEBUG
+                if (_deletedConstrainedEdges.Count == 0)
+                {
+                    Detail.ThrowAssertionFailedError();
+                }
+#endif
                 return _deletedConstrainedEdges.Pop();
             }
 
@@ -3616,7 +3763,12 @@ namespace detria
                                 // For the last vertex, the edge might already be created, so oppositeEdge is not always set
                                 // But it is needed for delaunay edge flip, so make sure it is set properly
                                 oppositeEdge = _topology.GetEdgeBetween(prevPrevVertex, prevVertex);
-                                Detail.DebugAssert(oppositeEdge.IsValid);
+#if DEBUG
+                                if (!oppositeEdge.IsValid)
+                                {
+                                    Detail.ThrowAssertionFailedError();
+                                }
+#endif
                             }
 
                             if (oppositeEdge.IsValid)
@@ -3635,7 +3787,12 @@ namespace detria
                         // Otherwise just break
                         if (_constrainedEdgeReTriangulationStack.Count < 2)
                         {
-                            Detail.DebugAssert(_constrainedEdgeReTriangulationStack.Count == 1);
+#if DEBUG
+                            if (_constrainedEdgeReTriangulationStack.Count != 1)
+                            {
+                                Detail.ThrowAssertionFailedError();
+                            }
+#endif
                             break;
                         }
                     }
@@ -3649,14 +3806,25 @@ namespace detria
                 _constrainedEdgeReTriangulationStack.Add(currenVertexIndex);
             }
 
-            Detail.DebugAssert(_constrainedEdgeReTriangulationStack.Count == 2);
+#if DEBUG
+            if (_constrainedEdgeReTriangulationStack.Count != 2)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
+#endif
             return true;
         }
 
         private bool ClassifyTriangles()
         {
             HalfEdgeIndex startingConvexHullEdge = Topology.GetOpposite(GetBoundaryEdgeOfVertex(_convexHullInitialVertex));
-            Detail.DebugAssert(startingConvexHullEdge.IsValid);
+
+#if DEBUG
+            if (!startingConvexHullEdge.IsValid)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
+#endif
 
             EdgeData startingEdgeData = _topology.GetEdgeData(startingConvexHullEdge);
             EdgeType startingEdgeType = startingEdgeData.EdgeType;
@@ -3738,7 +3906,13 @@ namespace detria
 
             // Outer edge, only has one triangle
             TriangleIndex startingTriangle = trianglesByHalfEdgeIndex[(int)startingConvexHullEdge.index.Value];
-            Detail.DebugAssert(startingTriangle.IsValid);
+
+#if DEBUG
+            if (!startingTriangle.IsValid)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
+#endif
 
             TriangleWithData startingTriangleData = _resultTriangles[(int)startingTriangle.index.Value];
             startingTriangleData.data.locationDataType = TriangleData.LocationDataType.Known;
@@ -3770,7 +3944,7 @@ namespace detria
                 }
                 else
                 {
-                    Detail.DebugAssert(false);
+                    Detail.ThrowAssertionFailedError();
                 }
             }
 
@@ -3779,8 +3953,12 @@ namespace detria
             {
                 TriangleData currentTriangleData = _resultTriangles[(int)currentTriangle.index.Value].data;
                 NullableIdx currentTriangleParentPolylineIndex = currentTriangleData.parentPolylineIndex;
-                Detail.DebugAssert(currentTriangleData.locationDataType == TriangleData.LocationDataType.Known);
-
+#if DEBUG
+                if (currentTriangleData.locationDataType != TriangleData.LocationDataType.Known)
+                {
+                    Detail.ThrowAssertionFailedError();
+                }
+#endif
                 bool currentTriangleIsInterior = GetTriangleLocation(currentTriangleData) == TriangleLocation.Interior;
 
                 HalfEdgeIndex[] edgesOfCurrentTriangle = _classifyTriangles_TmpTriangleEdges;
@@ -3905,7 +4083,12 @@ namespace detria
 
         private TriangleLocation GetTriangleLocation(TriangleData data)
         {
-            Detail.DebugAssert(data.locationDataType == TriangleData.LocationDataType.Known);
+#if DEBUG
+            if (data.locationDataType != TriangleData.LocationDataType.Known)
+            {
+                Detail.ThrowAssertionFailedError();
+            }
+#endif
 
             if (!data.parentPolylineIndex.HasValue)
             {
@@ -3914,12 +4097,22 @@ namespace detria
             else
             {
                 NullableIdx parentPolylineIndex = data.parentPolylineIndex;
-                Detail.DebugAssert((int)parentPolylineIndex.Value < _polylines.Count);
+#if DEBUG
+                if ((int)parentPolylineIndex.Value >= _polylines.Count)
+                {
+                    Detail.ThrowAssertionFailedError();
+                }
+#endif
                 EdgeType polylineType = _polylines[(int)parentPolylineIndex.Value].type;
                 if (polylineType == EdgeType.AutoDetect)
                 {
                     polylineType = _autoDetectedPolylineTypes[(int)parentPolylineIndex.Value];
-                    Detail.DebugAssert(polylineType == EdgeType.Outline || polylineType == EdgeType.Hole);
+#if DEBUG
+                    if (polylineType != EdgeType.Outline && polylineType != EdgeType.Hole)
+                    {
+                        Detail.ThrowAssertionFailedError();
+                    }
+#endif
                 }
 
                 return polylineType == EdgeType.Hole ? TriangleLocation.Hole : TriangleLocation.Interior;
@@ -3974,11 +4167,13 @@ namespace detria
             return boundaryEdge;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Math.Orientation Orient2d(Vec2 a, Vec2 b, Vec2 c)
         {
             return Math.Orient2d(_pred, a, b, c);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Math.CircleLocation Incircle(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
         {
             return Math.Incircle(_pred, a, b, c, d);
